@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/app.js" defer></script>
+</head>
+<body>
+    <h1>Beiträge</h1>
+    <table>
+        <thead>
+            <tr><th>Datum</th><th>Quelle</th><th>Titel</th><th>Link</th><th>Löschen</th></tr>
+        </thead>
+        <tbody id="posts-body"></tbody>
+    </table>
+    <h2>Quelle beantragen</h2>
+    <form id="request-form">
+        <input type="url" name="url" placeholder="Quellen-URL" required>
+        <textarea name="comment" placeholder="Kommentar"></textarea>
+        <button type="submit">Absenden</button>
+    </form>
+    <script>
+        document.getElementById('request-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            await fetch('/source-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: formData.get('url'),
+                    comment: formData.get('comment')
+                })
+            });
+            alert('Anfrage gesendet.');
+            e.target.reset();
+        });
+    </script>
+</body>
+</html>
