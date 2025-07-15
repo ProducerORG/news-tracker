@@ -1,0 +1,49 @@
+name: Deploy via FTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Upload Frontend via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./frontend
+          server-dir: ${{ secrets.FTP_TARGET_DIR }}/frontend
+
+      - name: Upload Backend via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./backend
+          server-dir: /
+
+      - name: Create .env on server (Backend)
+        run: |
+          echo "${{ secrets.ENV_CONTENTS }}" > .env
+        working-directory: ./backend/config
+
+      - name: Upload .env via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./backend/config
+          server-dir: /
+
+      - name: Run Composer (Backend)
+        run: composer install --no-dev --optimize-autoloader
+        working-directory: ./backend
