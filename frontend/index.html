@@ -3,9 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <script src="/js/auth.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth.js" defer></script>
 </head>
-<body>
-    <h1>Passwortschutz aktiv</h1>
+<body class="flex items-center justify-center h-screen bg-gray-100">
+    <div class="bg-white p-8 rounded shadow-md w-80">
+        <h1 class="text-xl font-bold mb-4 text-center">Login</h1>
+        <form id="login-form" class="flex flex-col gap-4">
+            <input type="password" id="password" placeholder="Passwort" class="border p-2 rounded">
+            <button type="submit" class="bg-blue-500 text-white rounded p-2">Login</button>
+        </form>
+        <p id="error-message" class="text-red-500 text-sm mt-2 hidden">Falsches Passwort.</p>
+    </div>
 </body>
 </html>
