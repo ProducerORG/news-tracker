@@ -1,28 +1,43 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../vendor/autoload.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
 
 header('Content-Type: application/json');
 
-$pdo = new PDO('pgsql:host=' . DB_HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASS);
+function supabaseRequest($method, $endpoint, $body = null) {
+    $url = SUPABASE_URL . '/rest/v1/' . $endpoint;
+    $headers = [
+        'apikey: ' . SUPABASE_KEY,
+        'Authorization: Bearer ' . SUPABASE_KEY,
+        'Content-Type: application/json',
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    if ($body !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+        $headers[] = 'Prefer: return=representation';
+    }
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    return $response;
+}
 
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 $requestUri = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 
 if ($requestMethod === 'GET' && $requestUri[0] === 'posts') {
-    $stmt = $pdo->query("SELECT * FROM posts WHERE deleted = FALSE ORDER BY date DESC");
-    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    echo supabaseRequest('GET', 'posts?select=*');
     exit;
 }
 
 if ($requestMethod === 'DELETE' && $requestUri[0] === 'posts' && isset($requestUri[1])) {
     $id = $requestUri[1];
-    $stmt = $pdo->prepare("UPDATE posts SET deleted = TRUE WHERE id = :id");
-    $stmt->execute(['id' => $id]);
-    echo json_encode(['status' => 'deleted']);
+    echo supabaseRequest('DELETE', 'posts?id=eq.' . $id);
     exit;
 }
 
@@ -31,7 +46,7 @@ if ($requestMethod === 'POST' && $requestUri[0] === 'source-request') {
     $url = $data['url'] ?? '';
     $comment = $data['comment'] ?? '';
 
-    $mail = new PHPMailer(true);
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     try {
         $mail->isSMTP();
         $mail->Host = SMTP_HOST;
