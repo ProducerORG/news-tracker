@@ -12,38 +12,62 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Upload Frontend via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      # FRONTEND DEPLOY
+      - name: Upload Frontend via FTP (Clean)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./frontend/
-          server-dir: /
+          server-dir: /frontend/
+          # dangerous-clean-slate: true
 
-      - name: Upload Backend via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      # BACKEND PUBLIC
+      - name: Upload Backend Public via FTP (Clean)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          local-dir: ./backend/
-          server-dir: /
+          local-dir: ./backend/public/
+          server-dir: /backend/public/
+          # dangerous-clean-slate: true
 
+      # BACKEND CONFIG
       - name: Create .env on server (Backend)
         run: |
-          echo "${{ secrets.ENV_CONTENTS }}" > .env
-        working-directory: ./backend/config
+          mkdir -p ./backend/config
+          echo "${{ secrets.ENV_CONTENTS }}" > ./backend/config/.env
 
-      - name: Upload .env via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      - name: Upload Backend Config via FTP (Clean)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./backend/config/
-          server-dir: /
+          server-dir: /backend/config/
+          # dangerous-clean-slate: true
 
-      - name: Run Composer (Backend)
-        run: composer install --no-dev --optimize-autoloader
-        working-directory: ./backend
+      # BACKEND SCRAPERS
+      - name: Upload Backend Scrapers via FTP (Clean)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./backend/scrapers/
+          server-dir: /backend/scrapers/
+          # dangerous-clean-slate: true
+
+      # BACKEND VENDOR
+      - name: Upload Backend Vendor via FTP (Clean)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./backend/vendor/
+          server-dir: /backend/vendor/
+          # dangerous-clean-slate: true
