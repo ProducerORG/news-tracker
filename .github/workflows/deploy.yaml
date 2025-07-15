@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./frontend/
-          server-dir: ${{ secrets.FTP_TARGET_DIR }}/frontend
+          server-dir: /
 
       - name: Upload Backend via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -41,7 +41,7 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          local-dir: ./backend/config
+          local-dir: ./backend/config/
           server-dir: /
 
       - name: Run Composer (Backend)
