@@ -3,28 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/app.js" defer></script>
 </head>
-<body class="bg-gray-100 p-8">
-    <h1 class="text-2xl font-bold mb-4">Beiträge</h1>
-    <table class="w-full border-collapse">
-        <thead>
-            <tr class="bg-gray-200">
-                <th class="p-2 border">Datum</th>
-                <th class="p-2 border">Quelle</th>
-                <th class="p-2 border">Titel</th>
-                <th class="p-2 border">Link</th>
-                <th class="p-2 border">Löschen</th>
-            </tr>
-        </thead>
-        <tbody id="posts-body" class="bg-white"></tbody>
-    </table>
-    <h2 class="text-xl font-bold mt-8">Quelle beantragen</h2>
-    <form id="request-form" class="mt-4 flex flex-col gap-2">
+<body class="bg-gray-100 p-8 min-h-screen">
+    <h1 class="text-3xl font-bold mb-6">Beiträge</h1>
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse shadow-md">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="p-2 border">Datum</th>
+                    <th class="p-2 border">Quelle</th>
+                    <th class="p-2 border">Titel</th>
+                    <th class="p-2 border">Link</th>
+                    <th class="p-2 border">Löschen</th>
+                </tr>
+            </thead>
+            <tbody id="posts-body" class="bg-white"></tbody>
+        </table>
+    </div>
+
+    <h2 class="text-2xl font-bold mt-10">Quelle beantragen</h2>
+    <form id="request-form" class="mt-4 flex flex-col gap-3 max-w-md">
         <input type="url" name="url" placeholder="Quellen-URL" required class="border p-2 rounded">
         <textarea name="comment" placeholder="Kommentar" class="border p-2 rounded"></textarea>
-        <button type="submit" class="bg-blue-500 text-white rounded p-2">Absenden</button>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white rounded p-2">Absenden</button>
     </form>
     <script>
         document.getElementById('request-form').addEventListener('submit', async (e) => {
