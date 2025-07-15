@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/auth.js" defer></script>
 </head>
-<body class="flex items-center justify-center h-screen bg-gray-100">
-    <div class="bg-white p-8 rounded shadow-md w-80">
-        <h1 class="text-xl font-bold mb-4 text-center">Login</h1>
+<body class="flex items-center justify-center h-screen bg-light-gray">
+    <div class="bg-white p-8 rounded shadow-md w-80 border border-gray-200">
+        <h1 class="text-xl font-bold mb-4 text-center text-[var(--gold)]">Login</h1>
         <form id="login-form" class="flex flex-col gap-4">
-            <input type="password" id="password" placeholder="Passwort" class="border p-2 rounded">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white rounded p-2">Login</button>
+            <input type="password" id="password" placeholder="Passwort">
+            <button type="submit" class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2">Login</button>
         </form>
         <p id="error-message" class="text-red-500 text-sm mt-2 hidden">Falsches Passwort.</p>
     </div>

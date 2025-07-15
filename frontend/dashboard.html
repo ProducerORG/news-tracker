@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/app.js" defer></script>
 </head>
-<body class="bg-gray-100 p-8 min-h-screen">
-    <h1 class="text-3xl font-bold mb-6">Beiträge</h1>
+<body class="bg-white p-8 min-h-screen">
+    <h1 class="text-3xl font-bold mb-6 text-[var(--gold)]">Beiträge</h1>
     <div class="overflow-x-auto">
         <table class="w-full border-collapse shadow-md">
             <thead>
-                <tr class="bg-gray-200">
+                <tr class="bg-[var(--light-gray)]">
                     <th class="p-2 border">Datum</th>
                     <th class="p-2 border">Quelle</th>
                     <th class="p-2 border">Titel</th>
@@ -24,11 +24,11 @@
         </table>
     </div>
 
-    <h2 class="text-2xl font-bold mt-10">Quelle beantragen</h2>
+    <h2 class="text-2xl font-bold mt-10 text-[var(--gold)]">Quelle beantragen</h2>
     <form id="request-form" class="mt-4 flex flex-col gap-3 max-w-md">
-        <input type="url" name="url" placeholder="Quellen-URL" required class="border p-2 rounded">
-        <textarea name="comment" placeholder="Kommentar" class="border p-2 rounded"></textarea>
-        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white rounded p-2">Absenden</button>
+        <input type="url" name="url" placeholder="Quellen-URL" required>
+        <textarea name="comment" placeholder="Kommentar"></textarea>
+        <button type="submit" class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2">Absenden</button>
     </form>
     <script>
         document.getElementById('request-form').addEventListener('submit', async (e) => {

@@ -2,14 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --gold: #bfa46f;
+    --light-gray: #f2f2f2;
+    --white: #ffffff;
+    --text-dark: #333333;
+}
+
 body {
-    @apply bg-gray-100 font-sans;
+    @apply m-0 font-sans bg-white text-gray-800;
 }
 
 h1, h2 {
     @apply font-bold;
 }
 
+h3, h4 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    margin-top: 1rem;
+}
+
 button {
     @apply transition-colors duration-150;
+}
+
+input[type="url"], input[type="password"], textarea {
+    @apply border rounded p-2 w-full;
 }
