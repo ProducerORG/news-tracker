@@ -22,7 +22,7 @@ jobs:
           server-dir: ${{ secrets.FTP_TARGET_DIR }}/frontend
 
       - name: Upload Backend via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
@@ -36,7 +36,7 @@ jobs:
         working-directory: ./backend/config
 
       - name: Upload .env via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
