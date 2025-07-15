@@ -27,21 +27,21 @@ function supabaseRequest($method, $endpoint, $body = null) {
     return $response;
 }
 
+$action = $_GET['action'] ?? null;
 $requestMethod = $_SERVER['REQUEST_METHOD'];
-$requestUri = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 
-if ($requestMethod === 'GET' && $requestUri[0] === 'posts') {
+if ($requestMethod === 'GET' && $action === 'posts') {
     echo supabaseRequest('GET', 'posts?select=*');
     exit;
 }
 
-if ($requestMethod === 'DELETE' && $requestUri[0] === 'posts' && isset($requestUri[1])) {
-    $id = $requestUri[1];
+if ($requestMethod === 'DELETE' && $action === 'posts' && isset($_GET['id'])) {
+    $id = $_GET['id'];
     echo supabaseRequest('DELETE', 'posts?id=eq.' . $id);
     exit;
 }
 
-if ($requestMethod === 'POST' && $requestUri[0] === 'source-request') {
+if ($requestMethod === 'POST' && $action === 'source-request') {
     $data = json_decode(file_get_contents('php://input'), true);
     $url = $data['url'] ?? '';
     $comment = $data['comment'] ?? '';
@@ -57,7 +57,7 @@ if ($requestMethod === 'POST' && $requestUri[0] === 'source-request') {
         $mail->Port = SMTP_PORT;
         $mail->setFrom(SMTP_FROM);
         $mail->addAddress(SMTP_TO);
-        $mail->Subject = 'Neue Quellen-Anfrage für Newstracker';
+        $mail->Subject = 'Neue Quellen-Anfrage';
         $mail->Body = "Quelle: $url\nKommentar: $comment";
         $mail->send();
         echo json_encode(['status' => 'sent']);
