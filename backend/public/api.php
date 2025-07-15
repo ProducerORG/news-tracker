@@ -57,7 +57,7 @@ if ($requestMethod === 'POST' && $requestUri[0] === 'source-request') {
         $mail->Port = SMTP_PORT;
         $mail->setFrom(SMTP_FROM);
         $mail->addAddress(SMTP_TO);
-        $mail->Subject = 'Neue Quellen-Anfrage';
+        $mail->Subject = 'Neue Quellen-Anfrage für Newstracker';
         $mail->Body = "Quelle: $url\nKommentar: $comment";
         $mail->send();
         echo json_encode(['status' => 'sent']);
