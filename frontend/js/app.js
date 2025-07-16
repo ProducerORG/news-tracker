@@ -10,7 +10,7 @@ const loadPosts = async () => {
         tableBody.innerHTML = '';
 
         if (!Array.isArray(posts)) {
-            console.warn('Erwartetes Array von Posts, aber bekommen:', posts);
+            console.warn('Erwartetes Array von Posts, aber erhalten:', posts);
             return;
         }
 
