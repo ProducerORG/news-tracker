@@ -31,7 +31,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./backend/public/
-          server-dir: /public/
+          server-dir: /frontend/public/
 
       # BACKEND CONFIG
       - name: Create .env on server (Backend)
