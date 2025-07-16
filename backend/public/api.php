@@ -22,9 +22,17 @@ function supabaseRequest($method, $endpoint, $body = null) {
     }
 
     $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
 
-    return $response;
+    return json_encode([
+        'http_code' => $http_code,
+        'curl_error' => $curl_error,
+        'url' => $url,
+        'headers' => $headers,
+        'response' => $response
+    ]);
 }
 
 $action = $_GET['action'] ?? null;
