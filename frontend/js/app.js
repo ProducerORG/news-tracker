@@ -1,7 +1,7 @@
 const loadPosts = async () => {
     console.log('Lade Beiträge von API...');
     try {
-        const res = await fetch('/public/index.php?action=posts');
+        const res = await fetch('/public/api.php?action=posts');
         console.log('API Response Status:', res.status);
         const posts = await res.json();
         console.log('API Response JSON:', posts);
@@ -10,7 +10,7 @@ const loadPosts = async () => {
         tableBody.innerHTML = '';
 
         if (!Array.isArray(posts)) {
-            console.warn('Erwartetes Array von Posts, aber erhalten:', posts);
+            console.warn('Erwartetes Array von Posts, aber bekommen:', posts);
             return;
         }
 
@@ -27,7 +27,7 @@ const loadPosts = async () => {
 const deletePost = async (id) => {
     console.log('Lösche Post mit ID:', id);
     try {
-        const res = await fetch(`/public/index.php?action=posts&id=${id}`, { method: 'DELETE' });
+        const res = await fetch(`/public/api.php?action=posts&id=${id}`, { method: 'DELETE' });
         console.log('DELETE Response Status:', res.status);
         loadPosts();
     } catch (error) {
