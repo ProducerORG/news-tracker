@@ -57,7 +57,7 @@ if ($requestMethod === 'POST' && $action === 'source-request') {
         $mail->Port = SMTP_PORT;
         $mail->setFrom(SMTP_FROM);
         $mail->addAddress(SMTP_TO);
-        $mail->Subject = 'Neue Quellen-Anfrage';
+        $mail->Subject = 'Neue Quellen-Anfrage ';
         $mail->Body = "Quelle: $url\nKommentar: $comment";
         $mail->send();
         echo json_encode(['status' => 'sent']);
