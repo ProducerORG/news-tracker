@@ -23,16 +23,6 @@ jobs:
           server-dir: /frontend/
           # dangerous-clean-slate: true
 
-      # BACKEND PUBLIC
-      - name: Upload Backend Public via FTP (Clean)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: ./backend/public/
-          server-dir: /frontend/public/
-
       # BACKEND CONFIG
       - name: Create .env on server (Backend)
         run: |
