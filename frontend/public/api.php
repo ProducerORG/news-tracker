@@ -68,5 +68,22 @@ if ($requestMethod === 'POST' && $action === 'source-request') {
     exit;
 }
 
+if ($requestMethod === 'POST' && $action === 'mark-deleted' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    echo supabaseRequest('PATCH', 'posts?id=eq.' . $id, ['deleted' => true]);
+    exit;
+}
+
+if ($requestMethod === 'POST' && $action === 'restore' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    echo supabaseRequest('PATCH', 'posts?id=eq.' . $id, ['deleted' => false]);
+    exit;
+}
+
+if ($requestMethod === 'GET' && $action === 'posts-trash') {
+    echo supabaseRequest('GET', 'posts?select=*&deleted=eq.true');
+    exit;
+}
+
 http_response_code(404);
 echo json_encode(['error' => 'Endpoint not found']);
