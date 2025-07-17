@@ -42,12 +42,21 @@
                 Absenden
             </button>
         </form>
-        <br><br><br>
-        <button id="toggleTrashButton"
-            onclick="toggleTrash()"
-            class="mt-6 text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
-            Papierkorb ansehen
-        </button>
+
+        <div class="flex flex-col gap-2 mt-10">
+            <button id="showPostsButton"
+                class="text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
+                Beiträge
+            </button>
+            <button id="showTrashButton"
+                class="text-sm px-4 py-2 rounded bg-gray-200 text-black hover:bg-yellow-100 transition">
+                Papierkorb
+            </button>
+            <button id="showSourcesButton"
+                class="text-sm px-4 py-2 rounded bg-gray-200 text-black hover:bg-yellow-100 transition">
+                Quellen
+            </button>
+        </div>
     </aside>
             
 
@@ -62,7 +71,7 @@
                         <th class="p-2 border cursor-pointer" onclick="sortPosts('source_id')">Quelle</th>
                         <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Titel</th>
                         <th class="p-2 border">Link</th>
-                        <th class="p-2 border">Löschen</th>
+                        <th class="p-2 border">Aktion</th>
                     </tr>
                 </thead>
                 <tbody id="posts-body" class="bg-white"></tbody>

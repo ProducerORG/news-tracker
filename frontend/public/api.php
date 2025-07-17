@@ -31,7 +31,7 @@ $action = $_GET['action'] ?? null;
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if ($requestMethod === 'GET' && $action === 'posts') {
-    echo supabaseRequest('GET', 'posts?select=*&deleted=eq.false');
+    echo supabaseRequest('GET', 'posts?select=*,source:sources(name)&deleted=eq.false');
     exit;
 }
 
@@ -82,6 +82,18 @@ if ($requestMethod === 'POST' && $action === 'restore' && isset($_GET['id'])) {
 
 if ($requestMethod === 'GET' && $action === 'posts-trash') {
     echo supabaseRequest('GET', 'posts?select=*&deleted=eq.true');
+    exit;
+}
+
+if ($requestMethod === 'GET' && $action === 'sources') {
+    echo supabaseRequest('GET', 'sources?select=*&order=created_at.desc');
+    exit;
+}
+
+if ($requestMethod === 'POST' && $action === 'toggle-source' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    $active = $_GET['active'] === 'true' ? 'true' : 'false';
+    echo supabaseRequest('PATCH', 'sources?id=eq.' . $id, ['active' => $active]);
     exit;
 }
 
