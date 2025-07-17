@@ -129,10 +129,11 @@ const loadTrash = async () => {
 
 const loadSources = async () => {
     console.log('Lade Quellen...');
+    setActiveButton('showSourcesButton');
     try {
         const res = await fetch('/public/api.php?action=sources');
         const sources = await res.json();
-        postsCache = sources;
+        sourcesCache = sources;
         const tableBody = document.getElementById('posts-body');
         tableBody.innerHTML = '';
 
@@ -151,10 +152,12 @@ const loadSources = async () => {
                 </td>`;
             tableBody.appendChild(row);
         });
+        document.getElementById('page-title').textContent = 'Quellen';
     } catch (error) {
         console.error('Fehler beim Laden der Quellen:', error);
     }
 };
+
 
 const toggleSource = async (id, active) => {
     console.log('Toggle Quelle ID:', id, 'Aktiv:', active);
