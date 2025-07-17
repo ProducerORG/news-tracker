@@ -48,7 +48,12 @@ const renderPosts = () => {
             <td class='p-2 border'>${formatDate(post.date)}</td>
             <td class='p-2 border'>${post.source_id}</td>
             <td class='p-2 border'>${post.title}</td>
-            <td class='p-2 border'><a href='${post.link}' target='_blank'>Link</a></td>
+            <td class='p-2 border'>
+                <a href="${post.link}" target="_blank" rel="noopener noreferrer"
+                    class="text-[var(--gold)] underline hover:text-yellow-700 break-all">
+                    ${post.link}
+                </a>
+            </td>
             <td class='p-2 border'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="deletePost('${post.id}')">In Papierkorb verschieben</button>
             </td>`;
