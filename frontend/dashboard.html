@@ -7,34 +7,58 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/app.js" defer></script>
 </head>
-<body class="bg-white p-8 min-h-screen">
-    <h1 class="text-3xl font-bold mb-6 text-[var(--gold)]">Beiträge</h1>
-    <div class="overflow-x-auto">
-        <table class="w-full border-collapse shadow-md">
-            <thead>
-                <tr class="bg-[var(--light-gray)]">
-                    <th class="p-2 border">Datum</th>
-                    <th class="p-2 border">Quelle</th>
-                    <th class="p-2 border">Titel</th>
-                    <th class="p-2 border">Link</th>
-                    <th class="p-2 border">Löschen</th>
-                </tr>
-            </thead>
-            <tbody id="posts-body" class="bg-white"></tbody>
-        </table>
-    </div>
+<body class="h-screen flex">
 
-    <h2 class="text-2xl font-bold mt-10 text-[var(--gold)]">Quelle beantragen</h2>
-    <form id="request-form" class="mt-4 flex flex-col gap-3 max-w-md">
-        <input type="url" name="url" placeholder="Quellen-URL" required>
-        <textarea name="comment" placeholder="Kommentar"></textarea>
-        <button type="submit" class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2">Absenden</button>
-    </form>
+    <!-- Sidebar -->
+    <aside class="w-80 bg-[var(--light-gray)] p-6 flex flex-col justify-between">
+        <div>
+            <img src="https://glueckswirtschaft.de/media/site/813e60f13a-1743167695/glueckswirtschaft-logo.svg" alt="Glückswirtschaft Logo" style="width: 100%; max-width: 160px; margin-bottom: 1rem;">
+            <h1 class="text-2xl font-serif text-[var(--gold)] mb-4">News-Tracker</h1>
+            <h2 class="font-bold mb-2">Was macht dieses Tool?</h2>
+            <p class="text-sm leading-relaxed text-[var(--text-dark)] mb-6">
+                Diese Anwendung sammelt und dokumentiert Nachrichten und Berichte von Glücksspielseiten. 
+                Die Tabellenansicht zeigt Ihnen aktuelle Einträge in Echtzeit.
+            </p>
+
+            <h2 class="font-bold mb-2">Quelle beantragen</h2>
+            <form id="request-form" class="flex flex-col gap-3">
+                <input type="url" name="url" placeholder="Quellen-URL" required
+                    class="border border-gray-300 rounded p-2 w-full bg-white text-sm">
+                <textarea name="comment" placeholder="Kommentar"
+                    class="border border-gray-300 rounded p-2 w-full bg-white text-sm"></textarea>
+                <button type="submit"
+                    class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2 text-sm">
+                    Absenden
+                </button>
+            </form>
+        </div>
+        <p class="text-xs text-gray-500">&copy; 2025 Glückswirtschaft</p>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8 overflow-auto">
+        <h1 class="text-3xl font-bold mb-6 text-[var(--gold)]">Beiträge</h1>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse shadow-md">
+                <thead>
+                    <tr class="bg-[var(--light-gray)]">
+                        <th class="p-2 border">Datum</th>
+                        <th class="p-2 border">Quelle</th>
+                        <th class="p-2 border">Titel</th>
+                        <th class="p-2 border">Link</th>
+                        <th class="p-2 border">Löschen</th>
+                    </tr>
+                </thead>
+                <tbody id="posts-body" class="bg-white"></tbody>
+            </table>
+        </div>
+    </main>
+
     <script>
         document.getElementById('request-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            await fetch('/backend/public/api.php/source-request', {
+            await fetch('/public/api.php?action=source-request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
