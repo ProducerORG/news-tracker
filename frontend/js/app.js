@@ -18,16 +18,26 @@ const setActiveButton = (id) => {
     ['showPostsButton', 'showTrashButton', 'showSourcesButton'].forEach(buttonId => {
         const btn = document.getElementById(buttonId);
         if (btn) {
-            btn.classList.remove('bg-[var(--gold)]');
-            btn.classList.remove('text-white');
-            btn.classList.add('bg-gray-200');
+            btn.classList.remove('bg-[var(--gold)]', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-black');
         }
     });
     const activeBtn = document.getElementById(id);
     if (activeBtn) {
-        activeBtn.classList.remove('bg-gray-200');
+        activeBtn.classList.remove('bg-gray-200', 'text-black');
         activeBtn.classList.add('bg-[var(--gold)]', 'text-white');
     }
+};
+
+const resetPostTableHead = () => {
+    const tableHead = document.querySelector('thead tr');
+    tableHead.innerHTML = `
+        <th class="p-2 border cursor-pointer" onclick="sortPosts('date')">Datum</th>
+        <th class="p-2 border cursor-pointer" onclick="sortPosts('source_id')">Quelle</th>
+        <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Titel</th>
+        <th class="p-2 border">Link</th>
+        <th class="p-2 border">Aktion</th>
+    `;
 };
 
 const renderPosts = () => {
@@ -47,7 +57,7 @@ const renderPosts = () => {
             </td>
             <td class='p-2 border'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
-                        onclick="deletePost('${post.id}')">In Papierkorb verschieben</button>
+                        onclick="deletePost('${post.id}')">Löschen</button>
             </td>`;
         tableBody.appendChild(row);
     });
@@ -81,6 +91,7 @@ const sortPosts = (column) => {
 
 const loadPosts = async () => {
     setActiveButton('showPostsButton');
+    resetPostTableHead();
     try {
         const res = await fetch('/public/api.php?action=posts');
         const posts = await res.json();
@@ -94,6 +105,7 @@ const loadPosts = async () => {
 
 const loadTrash = async () => {
     setActiveButton('showTrashButton');
+    resetPostTableHead();
     try {
         const res = await fetch('/public/api.php?action=posts-trash');
         const posts = await res.json();
@@ -134,15 +146,24 @@ const loadSources = async () => {
         const res = await fetch('/public/api.php?action=sources');
         const sources = await res.json();
         sourcesCache = sources;
+        postsCache = sources;
+
+        const tableHead = document.querySelector('thead tr');
+        tableHead.innerHTML = `
+            <th class="p-2 border">Quelle</th>
+            <th class="p-2 border">URL</th>
+            <th class="p-2 border">Status</th>
+            <th class="p-2 border">Aktion</th>
+        `;
+
         const tableBody = document.getElementById('posts-body');
         tableBody.innerHTML = '';
 
         sources.forEach(source => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class='p-2 border'>–</td>
                 <td class='p-2 border'>${source.name}</td>
-                <td class='p-2 border'>${source.url}</td>
+                <td class='p-2 border break-all'>${source.url}</td>
                 <td class='p-2 border'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
                 <td class='p-2 border'>
                     <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
