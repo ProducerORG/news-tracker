@@ -10,35 +10,36 @@
 <body class="h-screen flex">
 
     <!-- Sidebar -->
-    <aside class="w-80 bg-[var(--light-gray)] p-6 flex flex-col justify-between">
-        <div>
-            <img src="https://glueckswirtschaft.de/media/site/813e60f13a-1743167695/glueckswirtschaft-logo.svg" alt="Glückswirtschaft Logo" style="width: 100%; max-width: 160px; margin-bottom: 1rem;">
-            <h1 class="text-2xl font-serif text-[var(--gold)] mb-4">News-Tracker</h1>
-            <h2 class="font-bold mb-2">Was macht der Tracker?</h2>
-            <p class="text-sm leading-relaxed text-[var(--text-dark)] mb-6">
-                Er sammelt und dokumentiert Nachrichten und Berichte von einschlägigen Presseseiten. 
-                Die Tabellenansicht zeigt Ihnen aktuellste Einträge in Echtzeit. Sortieren Sie durch Klick auf die Spalte. Unten findet sich eine Liste der aktuell angezapften Quellen. Beantragen Sie die Einbindung einer neuen Quelle über das Formular.
-            </p>
+    <aside class="w-80 bg-[var(--light-gray)] p-6 flex flex-col justify-start font-sans">
+        <img src="https://glueckswirtschaft.de/media/site/813e60f13a-1743167695/glueckswirtschaft-logo.svg"
+            alt="Glückswirtschaft Logo"
+            class="w-full max-w-xs mb-6">
 
-            <h2 class="font-bold mb-2">Quelle beantragen</h2>
-            <form id="request-form" class="flex flex-col gap-3">
-                <input type="url" name="url" placeholder="Quellen-URL" required
-                    class="border border-gray-300 rounded p-2 w-full bg-white text-sm">
-                <textarea name="comment" placeholder="Kommentar"
-                    class="border border-gray-300 rounded p-2 w-full bg-white text-sm"></textarea>
-                <button type="submit"
-                    class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2 text-sm">
-                    Absenden
-                </button>
-            </form>
-        </div>
+        <h3 class="font-serif text-[var(--gold)] text-lg mt-4">Was macht der Tracker?</h3>
+        <p class="text-sm mt-2 leading-relaxed">
+            Er sammelt und dokumentiert Nachrichten und Berichte von einschlägigen Presseseiten. 
+            Die Tabellenansicht zeigt Ihnen aktuellste Einträge in Echtzeit. Sortieren Sie durch Klick auf die Spalte. 
+            Unten findet sich eine Liste der aktuell angezapften Quellen. Beantragen Sie die Einbindung einer neuen Quelle über das Formular.
+        </p>
+
+        <h3 class="font-serif text-[var(--gold)] text-lg mt-8">Quelle beantragen</h3>
+        <form id="request-form" class="mt-4 flex flex-col gap-3">
+            <input type="url" name="url" placeholder="Quellen-URL" required
+                class="p-2 border border-gray-300 rounded bg-white text-sm">
+            <textarea name="comment" placeholder="Kommentar"
+                class="p-2 border border-gray-300 rounded bg-white text-sm"></textarea>
+            <button type="submit"
+                class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2 text-sm transition">
+                Absenden
+            </button>
+        </form>
         <button id="toggleTrashButton"
             onclick="toggleTrash()"
-            class="mt-10 text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
+            class="mt-6 text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
             Papierkorb ansehen
         </button>
-        <p class="text-xs text-gray-500">&copy; 2025 Glückswirtschaft</p>
     </aside>
+            
 
     <!-- Main Content -->
     <main class="flex-1 p-8 overflow-auto">

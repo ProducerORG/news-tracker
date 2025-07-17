@@ -50,7 +50,7 @@ const renderPosts = () => {
             <td class='p-2 border'>${post.title}</td>
             <td class='p-2 border'><a href='${post.link}' target='_blank'>Link</a></td>
             <td class='p-2 border'>
-                <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="deletePost('${post.id}')">In Papierkorb</button>
+                <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="deletePost('${post.id}')">In Papierkorb verschieben</button>
             </td>`;
         tableBody.appendChild(row);
     });
@@ -106,7 +106,13 @@ const loadTrash = async () => {
                 <td class='p-2 border'>${post.title}</td>
                 <td class='p-2 border'><a href='${post.link}' target='_blank'>Link</a></td>
                 <td class='p-2 border'>
-                    <button class='bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1 text-xs' onclick="restorePost('${post.id}')">Wiederherstellen</button>
+                    <button class='text-white rounded px-2 py-1 text-xs' 
+                        style="background-color: #003300;"
+                        onmouseover="this.style.backgroundColor='#004d00';" 
+                        onmouseout="this.style.backgroundColor='#003300';"
+                        onclick="restorePost('${post.id}')">
+                        Wiederherstellen
+                    </button>
                 </td>`;
             tableBody.appendChild(row);
         });
