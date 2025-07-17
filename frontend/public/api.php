@@ -31,7 +31,7 @@ $action = $_GET['action'] ?? null;
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if ($requestMethod === 'GET' && $action === 'posts') {
-    echo supabaseRequest('GET', 'posts?select=*');
+    echo supabaseRequest('GET', 'posts?select=*&deleted=eq.false');
     exit;
 }
 

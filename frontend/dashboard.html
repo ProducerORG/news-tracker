@@ -32,7 +32,9 @@
                 </button>
             </form>
         </div>
-        <button id="toggleTrashButton" onclick="toggleTrash()" class="text-sm text-gray-600 hover:text-black mt-10">
+        <button id="toggleTrashButton"
+            onclick="toggleTrash()"
+            class="mt-10 text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
             Papierkorb ansehen
         </button>
         <p class="text-xs text-gray-500">&copy; 2025 Glückswirtschaft</p>
@@ -40,7 +42,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 p-8 overflow-auto">
-        <h1 class="text-3xl font-bold mb-6 text-[var(--gold)]">Beiträge</h1>
+        <h1 id="page-title" class="text-3xl font-bold mb-6 text-[var(--gold)]">Beiträge</h1>
         <div class="overflow-x-auto">
             <table class="w-full border-collapse shadow-md">
                 <thead>

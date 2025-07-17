@@ -50,7 +50,7 @@ const renderPosts = () => {
             <td class='p-2 border'>${post.title}</td>
             <td class='p-2 border'><a href='${post.link}' target='_blank'>Link</a></td>
             <td class='p-2 border'>
-                <button class='bg-red-500 hover:bg-red-600 text-white rounded p-1' onclick="deletePost('${post.id}')">Löschen</button>
+                <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="deletePost('${post.id}')">In Papierkorb</button>
             </td>`;
         tableBody.appendChild(row);
     });
@@ -106,7 +106,7 @@ const loadTrash = async () => {
                 <td class='p-2 border'>${post.title}</td>
                 <td class='p-2 border'><a href='${post.link}' target='_blank'>Link</a></td>
                 <td class='p-2 border'>
-                    <button class='bg-green-500 hover:bg-green-600 text-white rounded p-1' onclick="restorePost('${post.id}')">Wiederherstellen</button>
+                    <button class='bg-green-500 hover:bg-green-600 text-white rounded px-2 py-1 text-xs' onclick="restorePost('${post.id}')">Wiederherstellen</button>
                 </td>`;
             tableBody.appendChild(row);
         });
@@ -120,12 +120,15 @@ let showingTrash = false;
 const toggleTrash = () => {
     showingTrash = !showingTrash;
     const btn = document.getElementById('toggleTrashButton');
+    const title = document.getElementById('page-title');
     if (showingTrash) {
         loadTrash();
         btn.textContent = 'Beiträge ansehen';
+        title.textContent = 'Papierkorb';
     } else {
         loadPosts();
         btn.textContent = 'Papierkorb ansehen';
+        title.textContent = 'Beiträge';
     }
 };
 
