@@ -9,6 +9,7 @@ function supabaseRequest($method, $endpoint, $body = null) {
         'apikey: ' . SUPABASE_KEY,
         'Authorization: Bearer ' . SUPABASE_KEY,
         'Content-Type: application/json',
+        'Prefer: return=representation'
     ];
 
     $ch = curl_init($url);
@@ -18,7 +19,6 @@ function supabaseRequest($method, $endpoint, $body = null) {
 
     if ($body !== null) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-        $headers[] = 'Prefer: return=representation';
     }
 
     $response = curl_exec($ch);
