@@ -47,6 +47,7 @@ if ($requestMethod === 'POST' && $action === 'source-request') {
     $comment = $data['comment'] ?? '';
 
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    $mail->SMTPDebug = 2; // Debug aktivieren
     try {
         $mail->isSMTP();
         $mail->Host = SMTP_HOST;
@@ -57,13 +58,13 @@ if ($requestMethod === 'POST' && $action === 'source-request') {
         $mail->Port = SMTP_PORT;
         $mail->setFrom(SMTP_FROM);
         $mail->addAddress(SMTP_TO);
-        $mail->Subject = 'Neue Quellen-Anfrage ';
+        $mail->Subject = 'Neue Quellen-Anfrage';
         $mail->Body = "Quelle: $url\nKommentar: $comment";
         $mail->send();
         echo json_encode(['status' => 'sent']);
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => $mail->ErrorInfo]);
+        echo json_encode(['error' => $e->getMessage(), 'info' => $mail->ErrorInfo]);
     }
     exit;
 }
