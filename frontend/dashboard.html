@@ -33,18 +33,6 @@
             Wenn Sie bestehende Quellen deaktivieren, werden fortan keine neuen Beiträge mehr aus dieser Quelle ermittelt, bis sie diese wieder aktivieren.
         </p>
 
-        <h3 class="text-[var(--gold)] text-lg mt-8">Quelle beantragen</h3>
-        <form id="request-form" class="mt-4 flex flex-col gap-3">
-            <input type="url" name="url" placeholder="Quellen-URL" required
-                class="p-2 border border-gray-300 rounded bg-white text-sm">
-            <textarea name="comment" placeholder="Kommentar"
-                class="p-2 border border-gray-300 rounded bg-white text-sm"></textarea>
-            <button type="submit"
-                class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2 text-sm transition">
-                Absenden
-            </button>
-        </form>
-
         <div class="flex flex-col gap-2 mt-10">
             <button id="showPostsButton"
                 class="text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
@@ -59,6 +47,18 @@
                 Quellen
             </button>
         </div>
+
+        <h3 class="text-[var(--gold)] text-lg mt-8">Quelle beantragen</h3>
+        <form id="request-form" class="mt-4 flex flex-col gap-3">
+            <input type="url" name="url" placeholder="Quellen-URL" required
+                class="p-2 border border-gray-300 rounded bg-white text-sm">
+            <textarea name="comment" placeholder="Kommentar"
+                class="p-2 border border-gray-300 rounded bg-white text-sm"></textarea>
+            <button type="submit"
+                class="bg-[var(--gold)] hover:bg-yellow-700 text-white rounded p-2 text-sm transition">
+                Absenden
+            </button>
+        </form>
     </aside>
             
 
