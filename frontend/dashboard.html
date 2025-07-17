@@ -14,10 +14,10 @@
         <div>
             <img src="https://glueckswirtschaft.de/media/site/813e60f13a-1743167695/glueckswirtschaft-logo.svg" alt="Glückswirtschaft Logo" style="width: 100%; max-width: 160px; margin-bottom: 1rem;">
             <h1 class="text-2xl font-serif text-[var(--gold)] mb-4">News-Tracker</h1>
-            <h2 class="font-bold mb-2">Was macht dieses Tool?</h2>
+            <h2 class="font-bold mb-2">Was macht der Tracker?</h2>
             <p class="text-sm leading-relaxed text-[var(--text-dark)] mb-6">
-                Diese Anwendung sammelt und dokumentiert Nachrichten und Berichte von Glücksspielseiten. 
-                Die Tabellenansicht zeigt Ihnen aktuelle Einträge in Echtzeit.
+                Er sammelt und dokumentiert Nachrichten und Berichte von einschlägigen Presseseiten. 
+                Die Tabellenansicht zeigt Ihnen aktuellste Einträge in Echtzeit. Sortieren Sie durch Klick auf die Spalte. Unten findet sich eine Liste der aktuell angezapften Quellen. Beantragen Sie die Einbindung einer neuen Quelle über das Formular.
             </p>
 
             <h2 class="font-bold mb-2">Quelle beantragen</h2>
@@ -42,9 +42,9 @@
             <table class="w-full border-collapse shadow-md">
                 <thead>
                     <tr class="bg-[var(--light-gray)]">
-                        <th class="p-2 border">Datum</th>
-                        <th class="p-2 border">Quelle</th>
-                        <th class="p-2 border">Titel</th>
+                        <th class="p-2 border cursor-pointer" onclick="sortPosts('date')">Datum</th>
+                        <th class="p-2 border cursor-pointer" onclick="sortPosts('source_id')">Quelle</th>
+                        <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Titel</th>
                         <th class="p-2 border">Link</th>
                         <th class="p-2 border">Löschen</th>
                     </tr>
