@@ -76,26 +76,39 @@ class Automatenmarkt {
         return $results;
     }
 
-    private function fetchArticleDate($link) {
-        $html = @file_get_contents($link);
-        if (!$html) {
-            echo "Artikel nicht erreichbar: $link\n";
-            return null;
-        }
-        $dom = new DOMDocument();
-        @$dom->loadHTML($html);
-        $xpath = new DOMXPath($dom);
-
-        // Automarkenmarkt nutzt TYPO3: <meta name="date" content="YYYY-MM-DD">
-        $metaDate = $xpath->query('//meta[@name="date"]')->item(0);
-        if ($metaDate) {
-            $dateRaw = $metaDate->getAttribute('content');
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) {
-                return $dateRaw . ' 00:00:00';
-            }
-        }
+private function fetchArticleDate($link) {
+    $html = @file_get_contents($link);
+    if (!$html) {
+        echo "Artikel nicht erreichbar: $link\n";
         return null;
     }
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+    $xpath = new DOMXPath($dom);
+
+    // 1. Sichtbares Datum aus record-date
+    $recordDateNode = $xpath->query('//div[contains(@class,"record-date")]')->item(0);
+    if ($recordDateNode) {
+        $dateText = trim($recordDateNode->textContent);
+        // Erwarte Format: 16.07.2025
+        if (preg_match('/\d{2}\.\d{2}\.\d{4}/', $dateText, $matches)) {
+            $germanDate = DateTime::createFromFormat('d.m.Y', $matches[0]);
+            if ($germanDate) {
+                return $germanDate->format('Y-m-d') . ' 00:00:00';
+            }
+        }
+    }
+
+    // 2. Fallback: meta[name=date]
+    $metaDate = $xpath->query('//meta[@name="date"]')->item(0);
+    if ($metaDate) {
+        $dateRaw = $metaDate->getAttribute('content');
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) {
+            return $dateRaw . ' 00:00:00';
+        }
+    }
+    return null;
+}
 
     private function fetchSourceByName($name) {
         $sourcesJson = supabaseRequest('GET', 'sources?select=*&name=eq.' . urlencode($name));
