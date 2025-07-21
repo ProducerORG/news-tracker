@@ -38,6 +38,11 @@ const resetPostTableHead = () => {
     `;
 };
 
+const shortenText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '…' : text;
+};
+
 const renderPosts = () => {
     const tableBody = document.getElementById('posts-body');
     tableBody.innerHTML = '';
@@ -50,7 +55,7 @@ const renderPosts = () => {
             <td class='p-2 border'>
                 <a href="${post.link}" target="_blank" rel="noopener noreferrer"
                     class="text-[var(--gold)] underline hover:text-yellow-700 break-all">
-                    ${post.link}
+                    ${shortenText(post.link, 50)}
                 </a>
             </td>
             <td class='p-2 border'>
@@ -60,6 +65,7 @@ const renderPosts = () => {
         tableBody.appendChild(row);
     });
 };
+
 
 const sortPosts = (column) => {
     if (currentSort.column === column) {
