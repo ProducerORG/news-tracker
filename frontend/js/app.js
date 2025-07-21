@@ -52,9 +52,10 @@ const renderPosts = () => {
             <td class='p-2 border'>${formatDate(post.date)}</td>
             <td class='p-2 border'>${post.source?.name || ''}</td>
             <td class='p-2 border font-bold'>${post.title}</td>
-            <td class='p-2 border'>
+            <td class='p-2 border max-w-[300px] overflow-hidden whitespace-nowrap text-ellipsis'>
                 <a href="${post.link}" target="_blank" rel="noopener noreferrer"
-                    class="text-[var(--gold)] underline hover:text-yellow-700 break-all">
+                    class="text-[var(--gold)] underline hover:text-yellow-700"
+                    title="${post.link}">
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
