@@ -48,7 +48,7 @@ const renderPosts = () => {
         row.innerHTML = `
             <td class='p-2 border'>${formatDate(post.date)}</td>
             <td class='p-2 border'>${post.source?.name || ''}</td>
-            <td class='p-2 border'>${post.title}</td>
+            <td class='p-2 border font-bold'>${post.title}</td>
             <td class='p-2 border'>
                 <a href="${post.link}" target="_blank" rel="noopener noreferrer"
                     class="text-[var(--gold)] underline hover:text-yellow-700 break-all">
@@ -67,7 +67,7 @@ const sortPosts = (column) => {
     if (currentSort.column === column) {
         currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
-        currentSort = { column, direction: 'asc' };
+        currentSort = { column, direction: column === 'date' ? 'desc' : 'asc' };
     }
 
     postsCache.sort((a, b) => {
@@ -89,14 +89,17 @@ const sortPosts = (column) => {
     renderPosts();
 };
 
-const loadPosts = async () => {
+const loadPosts = async (resetSort = true) => {
     setActiveButton('showPostsButton');
     resetPostTableHead();
     try {
         const res = await fetch('/public/api.php?action=posts');
         const posts = await res.json();
         postsCache = posts;
-        sortPosts('date');
+        if (resetSort || !currentSort.column) {
+            currentSort = { column: 'date', direction: 'desc' };
+        }
+        sortPosts(currentSort.column);
         document.getElementById('page-title').textContent = 'Meldungen';
     } catch (error) {
         console.error('Fehler beim Laden der Meldungen:', error);
@@ -195,7 +198,7 @@ const toggleSource = async (id, active) => {
 const deletePost = async (id) => {
     try {
         const res = await fetch(`/public/api.php?action=mark-deleted&id=${id}`, { method: 'POST' });
-        loadPosts();
+        await loadPosts(false);
     } catch (error) {
         console.error('Fehler beim Soft-Delete:', error);
     }
