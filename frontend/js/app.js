@@ -97,9 +97,9 @@ const loadPosts = async () => {
         const posts = await res.json();
         postsCache = posts;
         sortPosts('date');
-        document.getElementById('page-title').textContent = 'Beiträge';
+        document.getElementById('page-title').textContent = 'Meldungen';
     } catch (error) {
-        console.error('Fehler beim Laden der Beiträge:', error);
+        console.error('Fehler beim Laden der Meldungen:', error);
     }
 };
 

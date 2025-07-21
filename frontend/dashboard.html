@@ -26,17 +26,17 @@
 
         <h3 class="text-[var(--gold)] text-lg mt-4">Was macht der NewsTracker?</h3>
         <p class="text-sm mt-2 leading-relaxed">
-            Er sammelt Meldungen von bestimmten Pressequellen. 
-            Die Tabellenansicht zeigt die aktuellsten Einträge in Echtzeit. Sortieren Sie durch Klick auf die Spalte.</p>
+            Er sammelt Meldungen von ausgewählten Online-Quellen. 
+            Die Tabellenansicht aktualisiert mehrmals täglich die aktuellsten Einträge. Sortieren Sie durch Klick auf die Spalte.</p>
         <p class="text-sm mt-2 leading-relaxed"> 
-            Unten findet sich eine Liste der aktuell angezapften Quellen. Beantragen Sie die Einbindung einer neuen Quelle über das Formular.
-            Wenn Sie bestehende Quellen deaktivieren, werden fortan keine neuen Beiträge mehr aus dieser Quelle ermittelt, bis sie diese wieder aktivieren.
+            Unten findet sich eine Liste der derzeit aktiven Quellen. Beantragen Sie die Einbindung einer neuen Quelle über das Formular.
+            Wenn Sie bestehende Quellen deaktivieren, werden fortan keine neuen Meldungen mehr aus dieser Quelle ermittelt, bis Sie diese wieder aktivieren.
         </p>
 
         <div class="flex flex-col gap-2 mt-10">
             <button id="showPostsButton"
                 class="text-sm px-4 py-2 rounded bg-[var(--gold)] text-white hover:bg-yellow-700 transition">
-                Beiträge
+                Meldungen
             </button>
             <button id="showTrashButton"
                 class="text-sm px-4 py-2 rounded bg-gray-200 text-black hover:bg-yellow-700 transition">
@@ -64,7 +64,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 p-8 overflow-auto">
-        <h1 id="page-title" class="text-3xl font-bold mb-6 text-[var(--gold)]">Beiträge</h1>
+        <h1 id="page-title" class="text-3xl font-bold mb-6 text-[var(--gold)]">Meldungen</h1>
         <div class="overflow-x-auto">
             <table class="w-full border-collapse shadow-md">
                 <thead>
