@@ -99,7 +99,8 @@ const loadPosts = async (resetSort = true) => {
         if (resetSort || !currentSort.column) {
             currentSort = { column: 'date', direction: 'desc' };
         }
-        sortPosts(currentSort.column);
+        postsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+        renderPosts();
         document.getElementById('page-title').textContent = 'Meldungen';
     } catch (error) {
         console.error('Fehler beim Laden der Meldungen:', error);
