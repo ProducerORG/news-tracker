@@ -1,30 +1,25 @@
 <?php
-class MerkurGroup {
-    const SOURCE_NAME = 'MerkurGroup';
+require_once __DIR__ . '/../../frontend/public/api.php';
 
-    public static function fetch(PDO $db) {
-        $stmt = $db->prepare("SELECT id, url FROM sources WHERE name = :name LIMIT 1");
-        $stmt->execute(['name' => self::SOURCE_NAME]);
-        $source = $stmt->fetch(PDO::FETCH_ASSOC);
+class MerkurGroup {
+    public function fetch() {
+        $sourceName = 'MerkurGroup';
+        $source = $this->fetchSourceByName($sourceName);
 
         if (!$source) {
-            echo "FEHLER: Quelle " . self::SOURCE_NAME . " nicht in der DB gefunden.\n";
+            echo "Source $sourceName not found.\n";
             return [];
         }
 
-        echo "Nutze URL aus DB für " . self::SOURCE_NAME . ": {$source['url']}\n";
-
-        $html = @file_get_contents($source['url']);
-        if ($html === false) {
-            echo "FEHLER: Konnte URL nicht abrufen: {$source['url']}\n";
-            return [];
-        }
-
+        $url = $source['url'];
+        echo "Verwende URL aus DB: {$url}\n";
+        $html = file_get_contents($url);
         $dom = new DOMDocument();
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
 
         $entries = $xpath->query('//div[@id="ausgabe"]/div');
+
         $results = [];
 
         foreach ($entries as $entry) {
@@ -35,31 +30,15 @@ class MerkurGroup {
             if ($dateNode && $titleNode && $linkNode) {
                 $dateRaw = trim($dateNode->textContent);
                 $dateParts = explode('.', $dateRaw);
-                if (count($dateParts) === 3) {
-                    $dateFormatted = sprintf('%04d-%02d-%02d 00:00:00', $dateParts[2], $dateParts[1], $dateParts[0]);
-                } else {
-                    $dateFormatted = date('Y-m-d H:i:s');
-                }
+                $dateFormatted = (count($dateParts) === 3)
+                    ? sprintf('%04d-%02d-%02d 00:00:00', $dateParts[2], $dateParts[1], $dateParts[0])
+                    : date('Y-m-d H:i:s');
 
                 $title = trim($titleNode->textContent);
                 $href = $linkNode->getAttribute('href');
+                $link = (strpos($href, 'http') === 0) ? $href : rtrim($url, '/') . '/' . ltrim($href, '/');
 
-                // Absoluter Link aus der DB-URL bilden
-                if (strpos($href, 'http') === 0) {
-                    $link = $href;
-                } else {
-                    $link = rtrim($source['url'], '/') . '/' . ltrim($href, '/');
-                }
-
-                $stmt = $db->prepare("INSERT INTO posts (date, source_id, title, link, deleted, created_at)
-                                      VALUES (:date, :source_id, :title, :link, FALSE, NOW())");
-                $stmt->execute([
-                    'date' => $dateFormatted,
-                    'source_id' => $source['id'],
-                    'title' => $title,
-                    'link' => $link
-                ]);
-
+                $this->insertPost($dateFormatted, $source['id'], $title, $link);
                 $results[] = [
                     'date' => $dateFormatted,
                     'title' => $title,
@@ -67,8 +46,24 @@ class MerkurGroup {
                 ];
             }
         }
-
-        echo "Erfolgreich verarbeitet für " . self::SOURCE_NAME . ": " . count($results) . " Einträge.\n";
         return $results;
+    }
+
+    private function fetchSourceByName($name) {
+        $sourcesJson = supabaseRequest('GET', 'sources?select=*&name=eq.' . urlencode($name));
+        $sources = json_decode($sourcesJson, true);
+        return $sources[0] ?? null;
+    }
+
+    private function insertPost($date, $sourceId, $title, $link) {
+        $data = [
+            'date' => $date,
+            'source_id' => $sourceId,
+            'title' => $title,
+            'link' => $link,
+            'deleted' => false
+        ];
+        $response = supabaseRequest('POST', 'posts', $data);
+        echo "Gespeichert: $title ($link)\n";
     }
 }
