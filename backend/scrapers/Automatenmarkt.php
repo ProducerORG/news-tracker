@@ -16,7 +16,7 @@ class Automatenmarkt {
 
         $results = [];
         $page = 1;
-        $maxPages = 10; // Sicherheit: nicht endlos laufen
+        $maxPages = 10;
         while ($page <= $maxPages) {
             $url = $baseUrl . '?tx_tonic_record%5B%40widget_pager_0%5D%5BcurrentPage%5D=' . $page;
             echo "Lade Seite: $url\n";
@@ -45,12 +45,16 @@ class Automatenmarkt {
                     $href = $linkNode->getAttribute('href');
                     $link = (strpos($href, 'http') === 0) ? $href : $baseUrl . '/' . ltrim($href, '/');
 
-                    $dateFormatted = date('Y-m-d H:i:s');
+                    $articleDate = $this->fetchArticleDate($link);
+                    if (!$articleDate) {
+                        echo "Kein Datum gefunden für: $link, wird übersprungen.\n";
+                        continue;
+                    }
 
-                    $dateTime = new DateTime($dateFormatted);
+                    $dateTime = new DateTime($articleDate);
                     $limitDate = new DateTime('-6 weeks');
                     if ($dateTime < $limitDate) {
-                        echo "Übersprungen (zu alt): {$dateFormatted}\n";
+                        echo "Übersprungen (zu alt): {$articleDate}\n";
                         continue;
                     }
 
@@ -59,9 +63,9 @@ class Automatenmarkt {
                         continue;
                     }
 
-                    $this->insertPost($dateFormatted, $source['id'], $title, $link);
+                    $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
                     $results[] = [
-                        'date' => $dateFormatted,
+                        'date' => $dateTime->format('Y-m-d H:i:s'),
                         'title' => $title,
                         'link' => $link
                     ];
@@ -70,6 +74,27 @@ class Automatenmarkt {
             $page++;
         }
         return $results;
+    }
+
+    private function fetchArticleDate($link) {
+        $html = @file_get_contents($link);
+        if (!$html) {
+            echo "Artikel nicht erreichbar: $link\n";
+            return null;
+        }
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+
+        // Automarkenmarkt nutzt TYPO3: <meta name="date" content="YYYY-MM-DD">
+        $metaDate = $xpath->query('//meta[@name="date"]')->item(0);
+        if ($metaDate) {
+            $dateRaw = $metaDate->getAttribute('content');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) {
+                return $dateRaw . ' 00:00:00';
+            }
+        }
+        return null;
     }
 
     private function fetchSourceByName($name) {
