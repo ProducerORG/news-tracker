@@ -43,7 +43,7 @@ class Automatenmarkt {
                 if ($titleNode && $linkNode) {
                     $title = trim($titleNode->textContent);
                     $href = $linkNode->getAttribute('href');
-                    $link = (strpos($href, 'http') === 0) ? $href : $baseUrl . '/' . ltrim($href, '/');
+                    $link = (strpos($href, 'http') === 0) ? $href : 'https://www.automatenmarkt.de' . $href;
 
                     $articleDate = $this->fetchArticleDate($link);
                     if (!$articleDate) {
