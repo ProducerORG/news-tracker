@@ -245,7 +245,7 @@ const renderTrash = () => {
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
-            <td class='p-2 border'>
+            <td class='p-2 border text-center'>
                 <button class='text-white rounded px-2 py-1 text-xs' 
                         style="background-color: #003300;"
                         onmouseover="this.style.backgroundColor='#004d00';" 
