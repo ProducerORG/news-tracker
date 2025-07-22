@@ -363,10 +363,12 @@ const buildSourceFilterButtons = () => {
 
         const updateStyle = () => {
             if (filterSources.has(sourceName)) {
-                button.classList.add('bg-[var(--gold)]', 'text-white');
+                button.style.backgroundColor = 'var(--gold)';
+                button.style.color = 'white';
                 button.innerHTML = `<span>${sourceName}</span><span>✓</span>`;
             } else {
-                button.classList.remove('bg-[var(--gold)]', 'text-white');
+                button.style.backgroundColor = 'white';
+                button.style.color = 'black';
                 button.innerHTML = `<span>${sourceName}</span>`;
             }
         };
