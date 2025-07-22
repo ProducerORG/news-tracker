@@ -75,12 +75,19 @@ const renderPosts = () => {
         tableBody.appendChild(row);
     });
 
-    renderPagination();
+    renderPagination(postsCache.length, renderPosts);
 };
 
 
-const renderPagination = () => {
+const renderPagination = (totalItems, renderFunction) => {
     let pagination = document.getElementById('pagination');
+    const totalPages = Math.ceil(totalItems / postsPerPage);
+
+    if (totalPages <= 1) {
+        if (pagination) pagination.remove();
+        return;
+    }
+
     if (!pagination) {
         pagination = document.createElement('div');
         pagination.id = 'pagination';
@@ -89,19 +96,13 @@ const renderPagination = () => {
     }
     pagination.innerHTML = '';
 
-    const totalPages = Math.ceil(postsCache.length / postsPerPage);
-    if (totalPages <= 1) {
-        pagination.innerHTML = '';
-        return;
-    }
-
     const prevButton = document.createElement('button');
     prevButton.textContent = '←';
     prevButton.disabled = currentPage === 1;
     prevButton.className = 'px-2 py-1 border rounded';
     prevButton.onclick = () => {
         currentPage--;
-        renderPosts();
+        renderFunction();
     };
     pagination.appendChild(prevButton);
 
@@ -111,7 +112,7 @@ const renderPagination = () => {
     nextButton.className = 'px-2 py-1 border rounded';
     nextButton.onclick = () => {
         currentPage++;
-        renderPosts();
+        renderFunction();
     };
     pagination.appendChild(nextButton);
 
@@ -175,33 +176,55 @@ const loadTrash = async () => {
         const res = await fetch('/public/api.php?action=posts-trash');
         const posts = await res.json();
         postsCache = posts;
-        const tableBody = document.getElementById('posts-body');
-        tableBody.innerHTML = '';
-        posts.forEach(post => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class='p-2 border'>${formatDate(post.date)}</td>
-                <td class='p-2 border'>${post.source?.name || ''}</td>
-                <td class='p-2 border'>${post.title}</td>
-                <td class='p-2 border'>
-                    <a href="${post.link}" target="_blank" rel="noopener noreferrer"
-                       class="text-[var(--gold)] underline hover:text-yellow-700 break-all">${post.link}</a>
-                </td>
-                <td class='p-2 border'>
-                    <button class='text-white rounded px-2 py-1 text-xs' 
-                            style="background-color: #003300;"
-                            onmouseover="this.style.backgroundColor='#004d00';" 
-                            onmouseout="this.style.backgroundColor='#003300';"
-                            onclick="restorePost('${post.id}')">
-                        Wiederherstellen
-                    </button>
-                </td>`;
-            tableBody.appendChild(row);
-        });
+        currentPage = 1;
+        if (!currentSort.column) {
+            currentSort = { column: 'date', direction: 'desc' };
+        }
+        postsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+        renderTrash();
         document.getElementById('page-title').textContent = 'Papierkorb';
     } catch (error) {
         console.error('Fehler beim Laden des Papierkorbs:', error);
     }
+};
+
+const renderTrash = () => {
+    const tableBody = document.getElementById('posts-body');
+    tableBody.innerHTML = '';
+
+    const totalPages = Math.ceil(postsCache.length / postsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages > 0 ? totalPages : 1;
+
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+    const visiblePosts = postsCache.slice(startIndex, endIndex);
+
+    visiblePosts.forEach(post => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class='p-2 border'>${formatDate(post.date)}</td>
+            <td class='p-2 border'>${post.source?.name || ''}</td>
+            <td class='p-2 border'>${post.title}</td>
+            <td class='p-2 border max-w-[300px] overflow-hidden whitespace-nowrap text-ellipsis'>
+                <a href="${post.link}" target="_blank" rel="noopener noreferrer"
+                    class="text-[var(--gold)] underline hover:text-yellow-700"
+                    title="${post.link}">
+                    ${shortenText(post.link, 50)}
+                </a>
+            </td>
+            <td class='p-2 border'>
+                <button class='text-white rounded px-2 py-1 text-xs' 
+                        style="background-color: #003300;"
+                        onmouseover="this.style.backgroundColor='#004d00';" 
+                        onmouseout="this.style.backgroundColor='#003300';"
+                        onclick="restorePost('${post.id}')">
+                    Wiederherstellen
+                </button>
+            </td>`;
+        tableBody.appendChild(row);
+    });
+
+    renderPagination(postsCache.length, renderTrash);
 };
 
 const loadSources = async () => {
@@ -212,6 +235,7 @@ const loadSources = async () => {
         const sources = await res.json();
         sourcesCache = sources;
         postsCache = sources;
+        currentPage = 1;
 
         const tableHead = document.querySelector('thead tr');
         tableHead.innerHTML = `
@@ -221,28 +245,45 @@ const loadSources = async () => {
             <th class="p-2 border">Aktion</th>
         `;
 
-        const tableBody = document.getElementById('posts-body');
-        tableBody.innerHTML = '';
-
-        sources.forEach(source => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class='p-2 border'>${source.name}</td>
-                <td class='p-2 border break-all'>${source.url}</td>
-                <td class='p-2 border'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
-                <td class='p-2 border'>
-                    <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
-                        onclick="toggleSource('${source.id}', ${!source.active})">
-                        ${source.active ? 'Quelle deaktivieren' : 'Quelle aktivieren'}
-                    </button>
-                </td>`;
-            tableBody.appendChild(row);
-        });
+        renderSources();
         document.getElementById('page-title').textContent = 'Quellen';
     } catch (error) {
         console.error('Fehler beim Laden der Quellen:', error);
     }
 };
+
+
+const renderSources = () => {
+    const tableBody = document.getElementById('posts-body');
+    tableBody.innerHTML = '';
+
+    const totalPages = Math.ceil(postsCache.length / postsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages > 0 ? totalPages : 1;
+
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+    const visibleSources = postsCache.slice(startIndex, endIndex);
+
+    visibleSources.forEach(source => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class='p-2 border'>${source.name}</td>
+            <td class='p-2 border max-w-[300px] overflow-hidden whitespace-nowrap text-ellipsis'>
+                ${shortenText(source.url, 50)}
+            </td>
+            <td class='p-2 border'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
+            <td class='p-2 border'>
+                <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
+                    onclick="toggleSource('${source.id}', ${!source.active})">
+                    ${source.active ? 'Quelle deaktivieren' : 'Quelle aktivieren'}
+                </button>
+            </td>`;
+        tableBody.appendChild(row);
+    });
+
+    renderPagination(postsCache.length, renderSources);
+};
+
 
 
 const toggleSource = async (id, active) => {
