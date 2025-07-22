@@ -83,7 +83,7 @@ if ($requestMethod === 'POST' && $action === 'restore' && isset($_GET['id'])) {
 }
 
 if ($requestMethod === 'GET' && $action === 'posts-trash') {
-    echo supabaseRequest('GET', 'posts?select=*&deleted=eq.true');
+    echo supabaseRequest('GET', 'posts?select=*,source:sources(name)&deleted=eq.true');
     exit;
 }
 
