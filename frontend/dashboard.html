@@ -85,8 +85,12 @@
         </div>
         </div>
 
-        <h3 class="text-[var(--gold)] text-lg mt-8">Quelle beantragen</h3>
-        <form id="request-form" class="mt-4 flex flex-col gap-3">
+        <h3 id="request-toggle" class="text-[var(--gold)] text-lg mt-8 cursor-pointer flex items-center">
+            Quelle beantragen
+            <span id="request-arrow" class="ml-2 transform transition-transform">&#9654;</span>
+        </h3>
+
+        <form id="request-form" class="mt-4 flex flex-col gap-3 hidden">
             <input type="url" name="url" placeholder="Quellen-URL" required
                 class="p-2 border border-gray-300 rounded bg-white text-sm">
             <textarea name="comment" placeholder="Kommentar"
@@ -108,7 +112,7 @@
                     <tr class="bg-[var(--light-gray)]">
                         <th class="p-2 border cursor-pointer" onclick="sortPosts('date')">Datum</th>
                         <th class="p-2 border cursor-pointer" onclick="sortPosts('source_id')">Quelle</th>
-                        <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Titel</th>
+                        <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Überschrift</th>
                         <th class="p-2 border">Link</th>
                         <th class="p-2 border">Aktion</th>
                     </tr>
@@ -135,20 +139,18 @@
         });
     </script>
     <script>
-        document.getElementById('tracker-toggle').addEventListener('click', () => {
-            const desc = document.getElementById('tracker-description');
-            const arrow = document.getElementById('tracker-arrow');
-            desc.classList.toggle('hidden');
+    function setupToggle(toggleId, contentId, arrowId) {
+        document.getElementById(toggleId).addEventListener('click', () => {
+            const content = document.getElementById(contentId);
+            const arrow = document.getElementById(arrowId);
+            content.classList.toggle('hidden');
             arrow.classList.toggle('rotate-90');
         });
+    }
+
+    setupToggle('tracker-toggle', 'tracker-description', 'tracker-arrow');
+    setupToggle('filter-toggle', 'filter-section', 'filter-arrow');
+    setupToggle('request-toggle', 'request-form', 'request-arrow');
     </script>
-    <script>
-    document.getElementById('filter-toggle').addEventListener('click', () => {
-        const filter = document.getElementById('filter-section');
-        const arrow = document.getElementById('filter-arrow');
-        filter.classList.toggle('hidden');
-        arrow.classList.toggle('rotate-90');
-    });
-</script>
 </body>
 </html>
