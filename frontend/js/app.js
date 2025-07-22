@@ -271,8 +271,8 @@ const renderSources = () => {
             <td class='p-2 border break-all'>
                 ${source.url}
             </td>
-            <td class='p-2 border'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
-            <td class='p-2 border'>
+            <td class='p-2 border text-center'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
+            <td class='p-2 border text-center'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
                     onclick="toggleSource('${source.id}', ${!source.active})">
                     ${source.active ? 'Quelle deaktivieren' : 'Quelle aktivieren'}
