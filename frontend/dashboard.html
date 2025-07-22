@@ -55,6 +55,36 @@
             </button>
         </div>
 
+        <h3 id="filter-toggle" class="text-[var(--gold)] text-lg mt-8 cursor-pointer flex items-center">
+            Einträge filtern
+            <span id="filter-arrow" class="ml-2 transform transition-transform">&#9654;</span>
+        </h3>
+
+        <div id="filter-section" class="mt-2 hidden flex flex-col gap-4">
+
+            <div>
+                <label class="text-sm block mb-1">Suche nach Überschrift</label>
+                <input id="filter-search" type="text" placeholder="Suchbegriff eingeben" 
+                    class="p-1 w-full border border-gray-300 rounded text-sm">
+            </div>
+
+            <div class="flex gap-2">
+                <div class="flex-1">
+                    <label class="text-sm block mb-1">Datum von</label>
+                    <input id="filter-start-date" type="date" class="p-1 w-full border border-gray-300 rounded text-sm">
+                </div>
+                <div class="flex-1">
+                    <label class="text-sm block mb-1">Datum bis</label>
+                    <input id="filter-end-date" type="date" class="p-1 w-full border border-gray-300 rounded text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-sm block mb-1">Nach Quellen filtern</label>
+                <div id="filter-sources" class="flex flex-col gap-1"></div>
+            </div>
+        </div>
+
         <h3 class="text-[var(--gold)] text-lg mt-8">Quelle beantragen</h3>
         <form id="request-form" class="mt-4 flex flex-col gap-3">
             <input type="url" name="url" placeholder="Quellen-URL" required
@@ -112,5 +142,13 @@
             arrow.classList.toggle('rotate-90');
         });
     </script>
+    <script>
+    document.getElementById('filter-toggle').addEventListener('click', () => {
+        const filter = document.getElementById('filter-section');
+        const arrow = document.getElementById('filter-arrow');
+        filter.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-90');
+    });
+</script>
 </body>
 </html>

@@ -3,6 +3,10 @@ let sourcesCache = [];
 let currentSort = { column: null, direction: 'asc' };
 let currentPage = 1;
 const postsPerPage = 100;
+let filterTitle = '';
+let filterStartDate = '';
+let filterEndDate = '';
+let filterSources = new Set();
 
 const formatDate = (isoString) => {
     if (!isoString) return '';
@@ -51,9 +55,24 @@ const renderPosts = () => {
     const tableBody = document.getElementById('posts-body');
     tableBody.innerHTML = '';
 
+    let filteredPosts = postsCache.filter(post => {
+        let matchesTitle = post.title.toLowerCase().includes(filterTitle);
+        let matchesSource = filterSources.size === 0 || filterSources.has(post.source?.name);
+
+        let matchesStart = true;
+        let matchesEnd = true;
+        if (filterStartDate) matchesStart = new Date(post.date) >= new Date(filterStartDate);
+        if (filterEndDate) matchesEnd = new Date(post.date) <= new Date(filterEndDate);
+
+        return matchesTitle && matchesSource && matchesStart && matchesEnd;
+    });
+
+    const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages > 0 ? totalPages : 1;
+
     const startIndex = (currentPage - 1) * postsPerPage;
     const endIndex = startIndex + postsPerPage;
-    const visiblePosts = postsCache.slice(startIndex, endIndex);
+    const visiblePosts = filteredPosts.slice(startIndex, endIndex);
 
     visiblePosts.forEach(post => {
         const row = document.createElement('tr');
@@ -75,7 +94,7 @@ const renderPosts = () => {
         tableBody.appendChild(row);
     });
 
-    renderPagination(postsCache.length, renderPosts);
+    renderPagination(filteredPosts.length, renderPosts);
 };
 
 
@@ -157,6 +176,7 @@ const loadPosts = async (resetSort = true) => {
         const res = await fetch('/public/api.php?action=posts');
         const posts = await res.json();
         postsCache = posts;
+        buildSourceFilterButtons();
         currentPage = 1;
         if (resetSort || !currentSort.column) {
             currentSort = { column: 'date', direction: 'desc' };
@@ -176,6 +196,7 @@ const loadTrash = async () => {
         const res = await fetch('/public/api.php?action=posts-trash');
         const posts = await res.json();
         postsCache = posts;
+        buildSourceFilterButtons();
         currentPage = 1;
         if (!currentSort.column) {
             currentSort = { column: 'date', direction: 'desc' };
@@ -192,12 +213,24 @@ const renderTrash = () => {
     const tableBody = document.getElementById('posts-body');
     tableBody.innerHTML = '';
 
-    const totalPages = Math.ceil(postsCache.length / postsPerPage);
+    let filteredPosts = postsCache.filter(post => {
+        let matchesTitle = post.title.toLowerCase().includes(filterTitle);
+        let matchesSource = filterSources.size === 0 || filterSources.has(post.source?.name);
+
+        let matchesStart = true;
+        let matchesEnd = true;
+        if (filterStartDate) matchesStart = new Date(post.date) >= new Date(filterStartDate);
+        if (filterEndDate) matchesEnd = new Date(post.date) <= new Date(filterEndDate);
+
+        return matchesTitle && matchesSource && matchesStart && matchesEnd;
+    });
+
+    const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
     if (currentPage > totalPages) currentPage = totalPages > 0 ? totalPages : 1;
 
     const startIndex = (currentPage - 1) * postsPerPage;
     const endIndex = startIndex + postsPerPage;
-    const visiblePosts = postsCache.slice(startIndex, endIndex);
+    const visiblePosts = filteredPosts.slice(startIndex, endIndex);
 
     visiblePosts.forEach(post => {
         const row = document.createElement('tr');
@@ -224,7 +257,7 @@ const renderTrash = () => {
         tableBody.appendChild(row);
     });
 
-    renderPagination(postsCache.length, renderTrash);
+    renderPagination(filteredPosts.length, renderTrash);
 };
 
 const loadSources = async () => {
@@ -316,11 +349,52 @@ const restorePost = async (id) => {
     }
 };
 
+const buildSourceFilterButtons = () => {
+    const container = document.getElementById('filter-sources');
+    container.innerHTML = '';
+
+    const uniqueSources = [...new Set(postsCache.map(post => post.source?.name).filter(Boolean))];
+
+    uniqueSources.forEach(sourceName => {
+        const button = document.createElement('button');
+        button.textContent = sourceName;
+        button.className = 'text-sm border rounded px-2 py-1 text-left hover:bg-yellow-200';
+        button.dataset.source = sourceName;
+        button.onclick = () => {
+            if (filterSources.has(sourceName)) {
+                filterSources.delete(sourceName);
+                button.classList.remove('bg-yellow-300');
+            } else {
+                filterSources.add(sourceName);
+                button.classList.add('bg-yellow-300');
+            }
+            renderPosts();
+        };
+        container.appendChild(button);
+    });
+};
+
+
 document.addEventListener('DOMContentLoaded', () => {
     loadPosts();
     document.getElementById('showPostsButton').addEventListener('click', loadPosts);
     document.getElementById('showTrashButton').addEventListener('click', loadTrash);
     document.getElementById('showSourcesButton').addEventListener('click', loadSources);
+
+    document.getElementById('filter-search').addEventListener('input', e => {
+        filterTitle = e.target.value.toLowerCase();
+        renderPosts();
+    });
+
+    document.getElementById('filter-start-date').addEventListener('input', e => {
+        filterStartDate = e.target.value;
+        renderPosts();
+    });
+
+    document.getElementById('filter-end-date').addEventListener('input', e => {
+        filterEndDate = e.target.value;
+        renderPosts();
+    });
 });
 
 window.sortPosts = sortPosts;
