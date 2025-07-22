@@ -268,8 +268,8 @@ const renderSources = () => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class='p-2 border'>${source.name}</td>
-            <td class='p-2 border max-w-[300px] overflow-hidden whitespace-nowrap text-ellipsis'>
-                ${shortenText(source.url, 50)}
+            <td class='p-2 border break-all'>
+                ${source.url}
             </td>
             <td class='p-2 border'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
             <td class='p-2 border'>
