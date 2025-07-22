@@ -298,13 +298,15 @@ const renderSources = () => {
     const visibleSources = postsCache.slice(startIndex, endIndex);
 
     visibleSources.forEach(source => {
+        const statusBadge = source.active
+            ? `<span class='bg-green-600 text-white rounded px-2 py-1 text-xs'>Aktiv</span>`
+            : `<span class='bg-red-600 text-white rounded px-2 py-1 text-xs'>Inaktiv</span>`;
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class='p-2 border'>${source.name}</td>
-            <td class='p-2 border break-all'>
-                ${source.url}
-            </td>
-            <td class='p-2 border text-center'>${source.active ? 'Aktiv' : 'Inaktiv'}</td>
+            <td class='p-2 border break-all'>${source.url}</td>
+            <td class='p-2 border text-center'>${statusBadge}</td>
             <td class='p-2 border text-center'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
                     onclick="toggleSource('${source.id}', ${!source.active})">
