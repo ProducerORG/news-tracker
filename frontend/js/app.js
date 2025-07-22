@@ -358,18 +358,30 @@ const buildSourceFilterButtons = () => {
     uniqueSources.forEach(sourceName => {
         const button = document.createElement('button');
         button.textContent = sourceName;
-        button.className = 'text-sm border rounded px-2 py-1 text-left hover:bg-yellow-200';
+        button.className = 'text-sm border rounded px-2 py-1 text-left bg-white hover:bg-gray-100 flex justify-between items-center';
         button.dataset.source = sourceName;
+
+        const updateStyle = () => {
+            if (filterSources.has(sourceName)) {
+                button.classList.add('bg-[var(--gold)]', 'text-white');
+                button.innerHTML = `<span>${sourceName}</span><span>✓</span>`;
+            } else {
+                button.classList.remove('bg-[var(--gold)]', 'text-white');
+                button.innerHTML = `<span>${sourceName}</span>`;
+            }
+        };
+
         button.onclick = () => {
             if (filterSources.has(sourceName)) {
                 filterSources.delete(sourceName);
-                button.classList.remove('bg-yellow-300');
             } else {
                 filterSources.add(sourceName);
-                button.classList.add('bg-yellow-300');
             }
+            updateStyle();
             renderPosts();
         };
+
+        updateStyle();
         container.appendChild(button);
     });
 };
