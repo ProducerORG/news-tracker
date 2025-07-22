@@ -1,6 +1,8 @@
 let postsCache = [];
 let sourcesCache = [];
 let currentSort = { column: null, direction: 'asc' };
+let currentPage = 1;
+const postsPerPage = 100;
 
 const formatDate = (isoString) => {
     if (!isoString) return '';
@@ -48,7 +50,12 @@ const shortenText = (text, maxLength) => {
 const renderPosts = () => {
     const tableBody = document.getElementById('posts-body');
     tableBody.innerHTML = '';
-    postsCache.forEach(post => {
+
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+    const visiblePosts = postsCache.slice(startIndex, endIndex);
+
+    visiblePosts.forEach(post => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class='p-2 border'>${formatDate(post.date)}</td>
@@ -67,7 +74,53 @@ const renderPosts = () => {
             </td>`;
         tableBody.appendChild(row);
     });
+
+    renderPagination();
 };
+
+
+const renderPagination = () => {
+    let pagination = document.getElementById('pagination');
+    if (!pagination) {
+        pagination = document.createElement('div');
+        pagination.id = 'pagination';
+        pagination.className = 'flex gap-2 mt-4';
+        document.querySelector('main').appendChild(pagination);
+    }
+    pagination.innerHTML = '';
+
+    const totalPages = Math.ceil(postsCache.length / postsPerPage);
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    const prevButton = document.createElement('button');
+    prevButton.textContent = '←';
+    prevButton.disabled = currentPage === 1;
+    prevButton.className = 'px-2 py-1 border rounded';
+    prevButton.onclick = () => {
+        currentPage--;
+        renderPosts();
+    };
+    pagination.appendChild(prevButton);
+
+    const nextButton = document.createElement('button');
+    nextButton.textContent = '→';
+    nextButton.disabled = currentPage >= totalPages;
+    nextButton.className = 'px-2 py-1 border rounded';
+    nextButton.onclick = () => {
+        currentPage++;
+        renderPosts();
+    };
+    pagination.appendChild(nextButton);
+
+    const info = document.createElement('span');
+    info.textContent = `Seite ${currentPage} von ${totalPages}`;
+    info.className = 'px-4 py-1';
+    pagination.appendChild(info);
+};
+
 
 
 const sortPosts = (column) => {
@@ -103,6 +156,7 @@ const loadPosts = async (resetSort = true) => {
         const res = await fetch('/public/api.php?action=posts');
         const posts = await res.json();
         postsCache = posts;
+        currentPage = 1;
         if (resetSort || !currentSort.column) {
             currentSort = { column: 'date', direction: 'desc' };
         }
