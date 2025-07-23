@@ -55,10 +55,15 @@ const shortenText = (text, maxLength) => {
 function renderCommentCell(post) {
     const comment = (post.comment || '').trim();
     if (!comment) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick=\"openCommentPopup('${post.id}', '')\"> + </button>`;
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs text-center' onclick="openCommentPopup('${post.id}', '')"> + </button>`;
     } else {
         const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
-        return `<div class='cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis' onclick=\"openCommentPopup('${post.id}', ${JSON.stringify(comment)})\" title=\"Klicken zum Bearbeiten\">${short}</div>`;
+        return `<div class='comment-cell cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis border p-1 rounded' 
+                    data-id="${post.id}" 
+                    data-comment="${encodeURIComponent(comment)}" 
+                    title="Klicken zum Bearbeiten">
+                    ${short}
+                </div>`;
     }
 }
 
@@ -482,6 +487,15 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPosts();
     });
 });
+
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('comment-cell')) {
+        const id = e.target.dataset.id;
+        const comment = decodeURIComponent(e.target.dataset.comment || '');
+        openCommentPopup(id, comment);
+    }
+});
+
 
 window.sortPosts = sortPosts;
 window.deletePost = deletePost;
