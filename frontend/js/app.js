@@ -52,6 +52,16 @@ const shortenText = (text, maxLength) => {
     return text.length > maxLength ? text.substring(0, maxLength) + '…' : text;
 };
 
+function renderCommentCell(post) {
+    const comment = post.comment?.trim();
+    if (!comment) {
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick=\"openCommentPopup('${post.id}', '')\">Kommentieren</button>`;
+    } else {
+        const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
+        return `<div class='cursor-pointer text-sm text-gray-800' onclick=\"openCommentPopup('${post.id}', ${JSON.stringify(comment)})\" title=\"Klicken zum Bearbeiten\">${short}</div>`;
+    }
+}
+
 const renderPosts = () => {
     const tableBody = document.getElementById('posts-body');
     tableBody.innerHTML = '';
@@ -392,16 +402,6 @@ const buildSourceFilterButtons = () => {
         container.appendChild(button);
     });
 };
-
-function renderCommentCell(post) {
-    const comment = post.comment?.trim();
-    if (!comment) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick=\"openCommentPopup('${post.id}', '')\">Kommentieren</button>`;
-    } else {
-        const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
-        return `<div class='cursor-pointer text-sm text-gray-800' onclick=\"openCommentPopup('${post.id}', ${JSON.stringify(comment)})\" title=\"Klicken zum Bearbeiten\">${short}</div>`;
-    }
-}
 
 function openCommentPopup(postId, currentComment) {
     const overlay = document.createElement('div');
