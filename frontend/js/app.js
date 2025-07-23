@@ -395,10 +395,10 @@ const buildSourceFilterButtons = () => {
 function renderCommentCell(post) {
     const comment = post.comment?.trim();
     if (!comment) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="openCommentPopup('${post.id}', '')">Kommentieren</button>`;
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick=\"openCommentPopup('${post.id}', '')\">Kommentieren</button>`;
     } else {
         const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
-        return `<div class='cursor-pointer text-sm text-gray-800' onclick="openCommentPopup('${post.id}', ${JSON.stringify(comment)})" title="Klicken zum Bearbeiten">${short}</div>`;
+        return `<div class='cursor-pointer text-sm text-gray-800' onclick=\"openCommentPopup('${post.id}', ${JSON.stringify(comment)})\" title=\"Klicken zum Bearbeiten\">${short}</div>`;
     }
 }
 
@@ -440,7 +440,11 @@ function openCommentPopup(postId, currentComment) {
             body: JSON.stringify({ comment: textarea.value })
         });
         overlay.remove();
-        loadPosts(false); // oder loadTrash(), je nach aktivem Tab
+        if (document.getElementById('showTrashButton').classList.contains('bg-[var(--gold)]')) {
+            loadTrash();
+        } else {
+            loadPosts(false);
+        }
     };
 
     actions.appendChild(cancelBtn);
