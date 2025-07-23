@@ -42,6 +42,7 @@ const resetPostTableHead = () => {
         <th class="p-2 border cursor-pointer" onclick="sortPosts('source_id')">Quelle</th>
         <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Überschrift</th>
         <th class="p-2 border">Link</th>
+        <th class="p-2 border">Kommentar</th>
         <th class="p-2 border">Aktion</th>
     `;
 };
