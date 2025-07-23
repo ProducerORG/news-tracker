@@ -53,12 +53,12 @@ const shortenText = (text, maxLength) => {
 };
 
 function renderCommentCell(post) {
-    const comment = post.comment?.trim();
+    const comment = (post.comment || '').trim();
     if (!comment) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick=\"openCommentPopup('${post.id}', '')\">Kommentieren</button>`;
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick=\"openCommentPopup('${post.id}', '')\"> + </button>`;
     } else {
         const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
-        return `<div class='cursor-pointer text-sm text-gray-800' onclick=\"openCommentPopup('${post.id}', ${JSON.stringify(comment)})\" title=\"Klicken zum Bearbeiten\">${short}</div>`;
+        return `<div class='cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis' onclick=\"openCommentPopup('${post.id}', ${JSON.stringify(comment)})\" title=\"Klicken zum Bearbeiten\">${short}</div>`;
     }
 }
 
@@ -435,10 +435,11 @@ function openCommentPopup(postId, currentComment) {
     saveBtn.textContent = 'Speichern';
     saveBtn.className = 'px-4 py-1 bg-[var(--gold)] text-white rounded text-sm hover:bg-yellow-700';
     saveBtn.onclick = async () => {
+        const commentText = textarea.value.trim();
         await fetch(`/public/api.php?action=update-comment&id=${postId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comment: textarea.value })
+            body: JSON.stringify({ comment: commentText || null })
         });
         overlay.remove();
         if (document.getElementById('showTrashButton').classList.contains('bg-[var(--gold)]')) {
