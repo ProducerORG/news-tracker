@@ -55,7 +55,7 @@ const shortenText = (text, maxLength) => {
 function renderCommentCell(post) {
     const comment = (post.comment || '').trim();
     if (!comment) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs text-center' onclick="openCommentPopup('${post.id}', '')"> + </button>`;
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="openCommentPopup('${post.id}', '')"> + </button>`;
     } else {
         const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
         return `<div class='comment-cell cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis border p-1 rounded' 
@@ -103,7 +103,7 @@ const renderPosts = () => {
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
-            <td class='p-2 border text-sm text-gray-700'>${renderCommentCell(post)}</td>
+            <td class='p-2 border text-sm text-gray-700 text-center'>${renderCommentCell(post)}</td>
             <td class='p-2 border'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
                         onclick="deletePost('${post.id}')">Löschen</button>
@@ -262,7 +262,7 @@ const renderTrash = () => {
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
-            <td class='p-2 border text-sm text-gray-700'>${renderCommentCell(post)}</td>
+            <td class='p-2 border text-sm text-gray-700  text-center'>${renderCommentCell(post)}</td>
             <td class='p-2 border text-center'>
                 <button class='text-white rounded px-2 py-1 text-xs' 
                         style="background-color: #003300;"
