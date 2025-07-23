@@ -87,6 +87,7 @@ const renderPosts = () => {
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
+            <td class='p-2 border text-sm text-gray-700'>${renderCommentCell(post)}</td>
             <td class='p-2 border'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
                         onclick="deletePost('${post.id}')">Löschen</button>
@@ -245,6 +246,7 @@ const renderTrash = () => {
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
+            <td class='p-2 border text-sm text-gray-700'>${renderCommentCell(post)}</td>
             <td class='p-2 border text-center'>
                 <button class='text-white rounded px-2 py-1 text-xs' 
                         style="background-color: #003300;"
@@ -390,6 +392,68 @@ const buildSourceFilterButtons = () => {
     });
 };
 
+function renderCommentCell(post) {
+    const comment = post.comment?.trim();
+    if (!comment) {
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="openCommentPopup('${post.id}', '')">Kommentieren</button>`;
+    } else {
+        const short = comment.length > 15 ? comment.substring(0, 15) + '…' : comment;
+        return `<div class='cursor-pointer text-sm text-gray-800' onclick="openCommentPopup('${post.id}', ${JSON.stringify(comment)})" title="Klicken zum Bearbeiten">${short}</div>`;
+    }
+}
+
+function openCommentPopup(postId, currentComment) {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+
+    const container = document.createElement('div');
+    container.className = 'bg-white p-6 rounded shadow-lg max-w-lg w-full';
+
+    const textarea = document.createElement('textarea');
+    textarea.value = currentComment;
+    textarea.maxLength = 5000;
+    textarea.className = 'w-full h-40 border p-2 text-sm mb-2';
+
+    const counter = document.createElement('div');
+    counter.className = 'text-right text-xs text-gray-500 mb-4';
+    counter.textContent = `${textarea.value.length}/5000 Zeichen`;
+
+    textarea.addEventListener('input', () => {
+        counter.textContent = `${textarea.value.length}/5000 Zeichen`;
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'flex justify-end gap-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Verwerfen';
+    cancelBtn.className = 'px-4 py-1 border rounded text-sm';
+    cancelBtn.onclick = () => overlay.remove();
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Speichern';
+    saveBtn.className = 'px-4 py-1 bg-[var(--gold)] text-white rounded text-sm hover:bg-yellow-700';
+    saveBtn.onclick = async () => {
+        await fetch(`/public/api.php?action=update-comment&id=${postId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comment: textarea.value })
+        });
+        overlay.remove();
+        loadPosts(false); // oder loadTrash(), je nach aktivem Tab
+    };
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+
+    container.appendChild(textarea);
+    container.appendChild(counter);
+    container.appendChild(actions);
+    overlay.appendChild(container);
+
+    document.body.appendChild(overlay);
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPosts();
@@ -416,3 +480,4 @@ document.addEventListener('DOMContentLoaded', () => {
 window.sortPosts = sortPosts;
 window.deletePost = deletePost;
 window.restorePost = restorePost;
+window.openCommentPopup = openCommentPopup;

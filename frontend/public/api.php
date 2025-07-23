@@ -99,5 +99,13 @@ if ($requestMethod === 'POST' && $action === 'toggle-source' && isset($_GET['id'
     exit;
 }
 
+if ($requestMethod === 'POST' && $action === 'update-comment' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    $data = json_decode(file_get_contents('php://input'), true);
+    $comment = $data['comment'] ?? '';
+    echo supabaseRequest('PATCH', 'posts?id=eq.' . $id, ['comment' => $comment]);
+    exit;
+}
+
 http_response_code(404);
 echo json_encode(['error' => 'Endpoint not found']);
