@@ -513,13 +513,20 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
         });
         if (!res.ok) {
             let msg = `Serverfehler`;
+            let errorBody = null;
+
             try {
-                const errJson = await res.json();
-                msg += ': ' + (errJson.error || JSON.stringify(errJson));
+                errorBody = await res.clone().json();  // clone() erlaubt zweiten Zugriff
+                msg += ': ' + (errorBody.error || JSON.stringify(errorBody));
             } catch (e) {
-                const fallback = await res.text();
-                msg += ': ' + fallback;
+                try {
+                    const text = await res.text();
+                    msg += ': ' + text;
+                } catch (e2) {
+                    msg += ' (und keine lesbare Antwort)';
+                }
             }
+
             throw new Error(msg);
         }
         const data = await res.json();
