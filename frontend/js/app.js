@@ -512,8 +512,15 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
             body: JSON.stringify({ url: link, source: source })
         });
         if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Serverfehler: ${text}`);
+            let msg = `Serverfehler`;
+            try {
+                const errJson = await res.json();
+                msg += ': ' + (errJson.error || JSON.stringify(errJson));
+            } catch (e) {
+                const fallback = await res.text();
+                msg += ': ' + fallback;
+            }
+            throw new Error(msg);
         }
         const data = await res.json();
         if (data && data.text) {
