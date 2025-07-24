@@ -597,7 +597,7 @@ document.addEventListener('click', (e) => {
 });
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     await fetchSupportedArticleSources();
     loadPosts();
 
