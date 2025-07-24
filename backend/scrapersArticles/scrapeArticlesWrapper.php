@@ -126,16 +126,16 @@ function rewriteTextWithGPT($text) {
 try {
     file_put_contents('/tmp/wrapper-log.txt', "Scraper $source wird aufgerufen\n", FILE_APPEND);
     $rawText = scrapeArticle($url);
-    
+
     $cleanText = trim($rawText);
 
-    $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
-    $posts = json_decode($postsJson, true);
-    $postId = $posts[0]['id'] ?? null;
+    //$postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
+    //$posts = json_decode($postsJson, true);
+    //$postId = $posts[0]['id'] ?? null;
 
-    if ($postId) {
-        supabaseRequest('PATCH', 'posts?id=eq.' . $postId, ['articletext' => $cleanText]);
-    }
+    //if ($postId) {
+    //    supabaseRequest('PATCH', 'posts?id=eq.' . $postId, ['articletext' => $cleanText]);
+    //}
 
     $rewritten = rewriteTextWithGPT($cleanText);
 
