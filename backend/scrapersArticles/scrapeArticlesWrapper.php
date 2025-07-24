@@ -6,21 +6,24 @@ error_reporting(E_ALL);
 ob_start();
 header('Content-Type: application/json');
 
-file_put_contents('/tmp/wrapper-log.txt', "Wrapper gestartet\n", FILE_APPEND);
-
 require_once __DIR__ . '/../config/config.php';
 
+$log = [];
+
+function logMsg($msg) {
+    global $log;
+    $log[] = $msg;
+}
+
 $rawInput = file_get_contents('php://input');
-file_put_contents('/tmp/input-log.json', $rawInput);
 $input = json_decode($rawInput, true);
 
 $url = $input['url'] ?? null;
 $source = $input['source'] ?? null;
 
 if (!$url) {
-    file_put_contents('/tmp/wrapper-log.txt', "Fehler: URL fehlt\n", FILE_APPEND);
     http_response_code(400);
-    echo json_encode(['error' => 'URL erforderlich']);
+    echo json_encode(['error' => 'URL erforderlich', 'log' => ['URL fehlt']]);
     exit;
 }
 
@@ -37,30 +40,27 @@ if (!$source) {
             break;
         }
     }
-}
 
-if (!$source) {
-    file_put_contents('/tmp/wrapper-log.txt', "Fehler: Source nicht ermittelbar\n", FILE_APPEND);
-    http_response_code(400);
-    echo json_encode(['error' => 'Source konnte nicht ermittelt werden']);
-    exit;
+    if (!$source) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Source konnte nicht ermittelt werden', 'log' => ['Domain: ' . $host]]);
+        exit;
+    }
 }
 
 $scraperPath = __DIR__ . "/$source.php";
 
 if (!file_exists($scraperPath)) {
-    file_put_contents('/tmp/wrapper-log.txt', "Fehler: Scraper $scraperPath fehlt\n", FILE_APPEND);
     http_response_code(404);
-    echo json_encode(['error' => "Kein Scraper für Source '$source'"]);
+    echo json_encode(['error' => "Kein Scraper für Source '$source'", 'log' => ["Pfad fehlt: $scraperPath"]]);
     exit;
 }
 
 require_once $scraperPath;
 
 if (!function_exists('scrapeArticle')) {
-    file_put_contents('/tmp/wrapper-log.txt', "Fehler: Funktion scrapeArticle() fehlt in $scraperPath\n", FILE_APPEND);
     http_response_code(500);
-    echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt im Scraper']);
+    echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt im Scraper', 'log' => ["Funktion fehlt in $scraperPath"]]);
     exit;
 }
 
@@ -124,26 +124,36 @@ function rewriteTextWithGPT($text) {
 }
 
 try {
-    file_put_contents('/tmp/wrapper-log.txt', "Scraper $source wird aufgerufen\n", FILE_APPEND);
+    logMsg("Scraper $source wird aufgerufen");
     $rawText = scrapeArticle($url);
 
     $cleanText = trim($rawText);
+    logMsg("Artikeltext geladen (Länge: " . strlen($cleanText) . ")");
 
-    //$postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
-    //$posts = json_decode($postsJson, true);
-    //$postId = $posts[0]['id'] ?? null;
+    /* $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
+    $posts = json_decode($postsJson, true);
+    $postId = $posts[0]['id'] ?? null;
 
-    //if ($postId) {
-    //    supabaseRequest('PATCH', 'posts?id=eq.' . $postId, ['articletext' => $cleanText]);
-    //}
+    if ($postId) {
+        logMsg("Post-ID gefunden: $postId");
+        supabaseRequest('PATCH', 'posts?id=eq.' . $postId, ['articletext' => $cleanText]);
+        logMsg("Originaltext gespeichert");
+    } else {
+        logMsg("Keine passende Post-ID gefunden");
+    } */
 
     $rewritten = rewriteTextWithGPT($cleanText);
+    logMsg("GPT-Umschreibung erfolgreich (Länge: " . strlen($rewritten) . ")");
 
     ob_clean();
-    echo json_encode(['text' => trim($rewritten)]);
-    file_put_contents('/tmp/wrapper-log.txt', "Scraper + GPT erfolgreich\n", FILE_APPEND);
+    echo json_encode([
+        'text' => trim($rewritten),
+        'log' => $log
+    ]);
 } catch (Exception $e) {
-    file_put_contents('/tmp/wrapper-log.txt', "Fehler: " . $e->getMessage() . "\n", FILE_APPEND);
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode([
+        'error' => $e->getMessage(),
+        'log' => $log
+    ]);
 }
