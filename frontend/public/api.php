@@ -31,6 +31,11 @@ function supabaseRequest($method, $endpoint, $body = null) {
 $action = $_GET['action'] ?? null;
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
+if ($action === 'rewrite-article') {
+    require_once __DIR__ . '/../../backend/scrapersArticles/scrapeArticlesWrapper.php';
+    // Wrapper macht bereits alles inkl. JSON-Ausgabe und exit()
+}
+
 if ($requestMethod === 'GET' && $action === 'posts') {
     echo supabaseRequest('GET', 'posts?select=*,source:sources(name)&deleted=eq.false');
     exit;
