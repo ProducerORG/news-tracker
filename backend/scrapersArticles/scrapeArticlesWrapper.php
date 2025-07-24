@@ -130,7 +130,7 @@ try {
     $cleanText = trim($rawText);
     logMsg("Artikeltext geladen (Länge: " . strlen($cleanText) . ")");
 
-    /* $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
+    $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
     $posts = json_decode($postsJson, true);
     $postId = $posts[0]['id'] ?? null;
 
@@ -140,7 +140,7 @@ try {
         logMsg("Originaltext gespeichert");
     } else {
         logMsg("Keine passende Post-ID gefunden");
-    } */
+    }
 
     $rewritten = rewriteTextWithGPT($cleanText);
     logMsg("GPT-Umschreibung erfolgreich (Länge: " . strlen($rewritten) . ")");
