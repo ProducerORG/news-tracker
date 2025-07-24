@@ -488,7 +488,7 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
     const link = decodeURIComponent(linkEncoded);
     const source = decodeURIComponent(sourceEncoded);
     try {
-        const res = await fetch(`/public/scrapersArticles/scrapeArticlesWrapper.php`, {
+        const res = await fetch(`/public/api.php?action=rewrite-article`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: link, source: source })
