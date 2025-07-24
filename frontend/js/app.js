@@ -43,7 +43,8 @@ const resetPostTableHead = () => {
         <th class="p-2 border cursor-pointer" onclick="sortPosts('title')">Überschrift</th>
         <th class="p-2 border">Link</th>
         <th class="p-2 border">Kommentar</th>
-        <th class="p-2 border">Aktion</th>
+        <th class="p-2 border">Umschreiben</th>
+        <th class="p-2 border">Löschen</th>
     `;
 };
 
@@ -104,6 +105,7 @@ const renderPosts = () => {
                 </a>
             </td>
             <td class='p-2 border text-sm text-gray-700 text-center'>${renderCommentCell(post)}</td>
+            <td class='p-2 border text-sm text-gray-700 text-center'>${renderRewriteCell(post)}</td>
             <td class='p-2 border'>
                 <button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' 
                         onclick="deletePost('${post.id}')">Löschen</button>
@@ -262,7 +264,8 @@ const renderTrash = () => {
                     ${shortenText(post.link, 50)}
                 </a>
             </td>
-            <td class='p-2 border text-sm text-gray-700  text-center'>${renderCommentCell(post)}</td>
+            <td class='p-2 border text-sm text-gray-700 text-center'>${renderCommentCell(post)}</td>
+            <td class='p-2 border text-sm text-gray-700 text-center'>${renderRewriteCell(post)}</td>
             <td class='p-2 border text-center'>
                 <button class='text-white rounded px-2 py-1 text-xs' 
                         style="background-color: #003300;"
@@ -466,6 +469,112 @@ function openCommentPopup(postId, currentComment) {
 }
 
 
+function renderRewriteCell(post) {
+    const rewritten = (post.rewrittentext || '').trim();
+    if (!rewritten) {
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="triggerRewrite('${post.id}', '${encodeURIComponent(post.link)}', '${encodeURIComponent(post.source?.name || '')}')">Umschreiben</button>`;
+    } else {
+        const short = rewritten.length > 15 ? rewritten.substring(0, 15) + '…' : rewritten;
+        return `<div class='rewrite-cell cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis border p-1 rounded' 
+                    data-id="${post.id}" 
+                    data-text="${encodeURIComponent(rewritten)}" 
+                    title="Klicken zum Bearbeiten">
+                    ${short}
+                </div>`;
+    }
+}
+
+async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
+    const link = decodeURIComponent(linkEncoded);
+    const source = decodeURIComponent(sourceEncoded);
+    try {
+        const res = await fetch(`/public/scrapersArticles/scrapeArticlesWrapper.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: link, source: source })
+        });
+        const data = await res.json();
+        if (data && data.text) {
+            await fetch(`/public/api.php?action=update-rewritten&id=${postId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rewrittentext: data.text })
+            });
+            loadPosts(false);
+        }
+    } catch (err) {
+        console.error('Fehler beim Umschreiben:', err);
+    }
+}
+
+function openRewritePopup(postId, currentText) {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+
+    const container = document.createElement('div');
+    container.className = 'bg-white p-6 rounded shadow-lg max-w-lg w-full';
+
+    const textarea = document.createElement('textarea');
+    textarea.value = currentText;
+    textarea.maxLength = 10000;
+    textarea.className = 'w-full h-40 border p-2 text-sm mb-2';
+
+    const counter = document.createElement('div');
+    counter.className = 'text-right text-xs text-gray-500 mb-4';
+    counter.textContent = `${textarea.value.length}/10000 Zeichen`;
+
+    textarea.addEventListener('input', () => {
+        counter.textContent = `${textarea.value.length}/10000 Zeichen`;
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'flex justify-end gap-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Verwerfen';
+    cancelBtn.className = 'px-4 py-1 border rounded text-sm';
+    cancelBtn.onclick = () => overlay.remove();
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Speichern';
+    saveBtn.className = 'px-4 py-1 bg-[var(--gold)] text-white rounded text-sm hover:bg-yellow-700';
+    saveBtn.onclick = async () => {
+        const text = textarea.value.trim();
+        await fetch(`/public/api.php?action=update-rewritten&id=${postId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rewrittentext: text || null })
+        });
+        overlay.remove();
+        if (document.getElementById('showTrashButton').classList.contains('bg-[var(--gold)]')) {
+            loadTrash();
+        } else {
+            loadPosts(false);
+        }
+    };
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+
+    container.appendChild(textarea);
+    container.appendChild(counter);
+    container.appendChild(actions);
+    overlay.appendChild(container);
+
+    document.body.appendChild(overlay);
+}
+
+// Eventdelegation für Rewrite-Zellen
+
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('rewrite-cell')) {
+        const id = e.target.dataset.id;
+        const text = decodeURIComponent(e.target.dataset.text || '');
+        openRewritePopup(id, text);
+    }
+});
+
+
 document.addEventListener('DOMContentLoaded', () => {
     loadPosts();
     document.getElementById('showPostsButton').addEventListener('click', loadPosts);
@@ -501,3 +610,5 @@ window.sortPosts = sortPosts;
 window.deletePost = deletePost;
 window.restorePost = restorePost;
 window.openCommentPopup = openCommentPopup;
+window.triggerRewrite = triggerRewrite;
+window.openRewritePopup = openRewritePopup;
