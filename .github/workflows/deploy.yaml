@@ -50,6 +50,17 @@ jobs:
           server-dir: /backend/scrapers/
           # dangerous-clean-slate: true
 
+      # BACKEND SCRAPERS ARTICLES
+      - name: Upload Backend Article Scrapers via FTP (Clean)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./backend/scrapersArticles/
+          server-dir: /backend/scrapersArticles/
+          # dangerous-clean-slate: true
+
       # BACKEND VENDOR
       - name: Upload Backend Vendor via FTP (Clean)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
