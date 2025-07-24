@@ -76,7 +76,14 @@ function supabaseRequest($method, $endpoint, $body = null) {
     }
 
     $response = curl_exec($ch);
+    $error = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+
+    if ($httpCode >= 400 || $error) {
+        throw new Exception("Supabase Fehler ($httpCode): $error | Antwort: $response");
+    }
+
     return $response;
 }
 
@@ -105,11 +112,12 @@ function rewriteTextWithGPT($text) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
 
     $response = curl_exec($ch);
+    $error = curl_error($ch);
     $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($status !== 200) {
-        throw new Exception("GPT API Fehler ($status): $response");
+    if ($status !== 200 || $error) {
+        throw new Exception("GPT API Fehler ($status): $error | Antwort: $response");
     }
 
     $data = json_decode($response, true);
@@ -119,6 +127,9 @@ function rewriteTextWithGPT($text) {
 try {
     $rawText = scrapeArticle($url);
     $cleanText = trim($rawText);
+    if (!$cleanText) {
+        throw new Exception("Kein Text extrahiert");
+    }
 
     $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
     $posts = json_decode($postsJson, true);
@@ -129,10 +140,16 @@ try {
     }
 
     $rewritten = rewriteTextWithGPT($cleanText);
+    if (!$rewritten) {
+        throw new Exception("GPT lieferte keinen umgeschriebenen Text zurück");
+    }
 
     ob_clean();
     echo json_encode(['text' => trim($rewritten)]);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage(), 'debug' => 'Exception in wrapper']);
+    echo json_encode([
+        'error' => $e->getMessage(),
+        'debug' => 'Fehler im Wrapper: ' . $e->getMessage()
+    ]);
 }
