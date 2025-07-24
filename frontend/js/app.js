@@ -37,6 +37,20 @@ const setActiveButton = (id) => {
     }
 };
 
+function showErrorNotification(message) {
+    const existing = document.getElementById('error-notification');
+    if (existing) existing.remove();
+
+    const div = document.createElement('div');
+    div.id = 'error-notification';
+    div.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow z-50';
+    div.textContent = message;
+
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 5000);
+}
+
+
 const fetchSupportedArticleSources = async () => {
     try {
         const res = await fetch('/public/api.php?action=article-sources');
@@ -488,7 +502,7 @@ function renderRewriteCell(post) {
     const hasScraper = supportedArticleSources.has(sourceName);
 
     if (!rewritten && hasScraper) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="triggerRewrite('${post.id}', '${encodeURIComponent(post.link)}', '${encodeURIComponent(sourceName || '')}')">Umschreiben</button>`;
+        return `<button id="rewrite-btn-${post.id}" class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="triggerRewrite('${post.id}', '${encodeURIComponent(post.link)}', '${encodeURIComponent(sourceName || '')}')">Umschreiben</button>`;
     } else if (rewritten) {
         const short = rewritten.length > 15 ? rewritten.substring(0, 15) + '…' : rewritten;
         return `<div class='rewrite-cell cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis border p-1 rounded' 
@@ -505,6 +519,15 @@ function renderRewriteCell(post) {
 async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
     const link = decodeURIComponent(linkEncoded);
     const source = decodeURIComponent(sourceEncoded);
+    const button = document.getElementById(`rewrite-btn-${postId}`);
+    
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = `<svg class="animate-spin h-4 w-4 mx-auto text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>`;
+    }
     try {
         const res = await fetch(`/public/api.php?action=rewrite-article`, {
             method: 'POST',
@@ -523,9 +546,17 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
                 body: JSON.stringify({ rewrittentext: data.text })
             });
             loadPosts(false);
+        } else {
+            throw new Error('Kein Text erhalten');
         }
     } catch (err) {
         console.error('Fehler beim Umschreiben:', err);
+        showErrorNotification(err.message || 'Unbekannter Fehler beim Umschreiben');
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Umschreiben';
+        }
     }
 }
 
