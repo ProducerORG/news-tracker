@@ -10,3 +10,4 @@ define('SMTP_USER', $dotenv['SMTP_USER']);
 define('SMTP_PASS', $dotenv['SMTP_PASS']);
 define('SMTP_FROM', $dotenv['SMTP_FROM']);
 define('SMTP_TO', $dotenv['SMTP_TO']);
+define('GPT_KEY', $dotenv['GPT_KEY']);
