@@ -493,6 +493,10 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: link, source: source })
         });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Serverfehler: ${text}`);
+        }
         const data = await res.json();
         if (data && data.text) {
             await fetch(`/public/api.php?action=update-rewritten&id=${postId}`, {
