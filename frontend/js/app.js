@@ -512,22 +512,8 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
             body: JSON.stringify({ url: link, source: source })
         });
         if (!res.ok) {
-            let msg = `Serverfehler`;
-            let errorBody = null;
-
-            try {
-                errorBody = await res.clone().json();  // clone() erlaubt zweiten Zugriff
-                msg += ': ' + (errorBody.error || JSON.stringify(errorBody));
-            } catch (e) {
-                try {
-                    const text = await res.text();
-                    msg += ': ' + text;
-                } catch (e2) {
-                    msg += ' (und keine lesbare Antwort)';
-                }
-            }
-
-            throw new Error(msg);
+            const text = await res.text();
+            throw new Error(`Serverfehler: ${text}`);
         }
         const data = await res.json();
         if (data && data.text) {
