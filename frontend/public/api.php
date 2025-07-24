@@ -120,5 +120,14 @@ if ($requestMethod === 'POST' && $action === 'update-rewritten' && isset($_GET['
     exit;
 }
 
+if ($action === 'article-sources') {
+    $files = glob(__DIR__ . '/../../backend/scrapersArticles/*.php');
+    $sources = array_map(function($file) {
+        return basename($file, '.php');
+    }, $files);
+    echo json_encode($sources);
+    exit;
+}
+
 http_response_code(404);
 echo json_encode(['error' => 'Endpoint not found']);

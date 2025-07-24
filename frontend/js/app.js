@@ -7,6 +7,8 @@ let filterTitle = '';
 let filterStartDate = '';
 let filterEndDate = '';
 let filterSources = new Set();
+let supportedArticleSources = new Set();
+
 
 const formatDate = (isoString) => {
     if (!isoString) return '';
@@ -34,6 +36,17 @@ const setActiveButton = (id) => {
         activeBtn.classList.add('bg-[var(--gold)]', 'text-white');
     }
 };
+
+const fetchSupportedArticleSources = async () => {
+    try {
+        const res = await fetch('/public/api.php?action=article-sources');
+        const list = await res.json();
+        supportedArticleSources = new Set(list);
+    } catch (err) {
+        console.error('Fehler beim Abrufen der verfügbaren Artikelscraper:', err);
+    }
+};
+
 
 const resetPostTableHead = () => {
     const tableHead = document.querySelector('thead tr');
@@ -471,9 +484,12 @@ function openCommentPopup(postId, currentComment) {
 
 function renderRewriteCell(post) {
     const rewritten = (post.rewrittentext || '').trim();
-    if (!rewritten) {
-        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="triggerRewrite('${post.id}', '${encodeURIComponent(post.link)}', '${encodeURIComponent(post.source?.name || '')}')">Umschreiben</button>`;
-    } else {
+    const sourceName = post.source?.name;
+    const hasScraper = supportedArticleSources.has(sourceName);
+
+    if (!rewritten && hasScraper) {
+        return `<button class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="triggerRewrite('${post.id}', '${encodeURIComponent(post.link)}', '${encodeURIComponent(sourceName || '')}')">Umschreiben</button>`;
+    } else if (rewritten) {
         const short = rewritten.length > 15 ? rewritten.substring(0, 15) + '…' : rewritten;
         return `<div class='rewrite-cell cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis border p-1 rounded' 
                     data-id="${post.id}" 
@@ -481,6 +497,8 @@ function renderRewriteCell(post) {
                     title="Klicken zum Bearbeiten">
                     ${short}
                 </div>`;
+    } else {
+        return '';
     }
 }
 
@@ -580,7 +598,9 @@ document.addEventListener('click', (e) => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    await fetchSupportedArticleSources();
     loadPosts();
+
     document.getElementById('showPostsButton').addEventListener('click', loadPosts);
     document.getElementById('showTrashButton').addEventListener('click', loadTrash);
     document.getElementById('showSourcesButton').addEventListener('click', loadSources);
