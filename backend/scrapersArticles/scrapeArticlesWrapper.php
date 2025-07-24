@@ -6,15 +6,19 @@ error_reporting(E_ALL);
 ob_start();
 header('Content-Type: application/json');
 
+file_put_contents('/tmp/wrapper-log.txt', "Wrapper gestartet\n", FILE_APPEND);
+
 require_once __DIR__ . '/../config/config.php';
 
 $rawInput = file_get_contents('php://input');
+file_put_contents('/tmp/input-log.json', $rawInput);
 $input = json_decode($rawInput, true);
 
 $url = $input['url'] ?? null;
 $source = $input['source'] ?? null;
 
 if (!$url) {
+    file_put_contents('/tmp/wrapper-log.txt', "Fehler: URL fehlt\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode(['error' => 'URL erforderlich']);
     exit;
@@ -36,6 +40,7 @@ if (!$source) {
 }
 
 if (!$source) {
+    file_put_contents('/tmp/wrapper-log.txt', "Fehler: Source nicht ermittelbar\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode(['error' => 'Source konnte nicht ermittelt werden']);
     exit;
@@ -44,6 +49,7 @@ if (!$source) {
 $scraperPath = __DIR__ . "/$source.php";
 
 if (!file_exists($scraperPath)) {
+    file_put_contents('/tmp/wrapper-log.txt', "Fehler: Scraper $scraperPath fehlt\n", FILE_APPEND);
     http_response_code(404);
     echo json_encode(['error' => "Kein Scraper für Source '$source'"]);
     exit;
@@ -52,104 +58,22 @@ if (!file_exists($scraperPath)) {
 require_once $scraperPath;
 
 if (!function_exists('scrapeArticle')) {
+    file_put_contents('/tmp/wrapper-log.txt', "Fehler: Funktion scrapeArticle() fehlt in $scraperPath\n", FILE_APPEND);
     http_response_code(500);
     echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt im Scraper']);
     exit;
 }
 
-function supabaseRequest($method, $endpoint, $body = null) {
-    $url = SUPABASE_URL . '/rest/v1/' . $endpoint;
-    $headers = [
-        'apikey: ' . SUPABASE_KEY,
-        'Authorization: Bearer ' . SUPABASE_KEY,
-        'Content-Type: application/json',
-        'Prefer: return=representation'
-    ];
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-    if ($body !== null) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-    }
-
-    $response = curl_exec($ch);
-    $error = curl_error($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode >= 400 || $error) {
-        throw new Exception("Supabase Fehler ($httpCode): $error | Antwort: $response");
-    }
-
-    return $response;
-}
-
-function rewriteTextWithGPT($text) {
-    $apiKey = GPT_KEY;
-    if (!$apiKey) {
-        throw new Exception("GPT_KEY nicht gesetzt");
-    }
-
-    $payload = [
-        'model' => 'gpt-4',
-        'messages' => [
-            ['role' => 'system', 'content' => 'Formuliere den folgenden deutschen Pressetext stilistisch um, ohne Fakten zu verändern.'],
-            ['role' => 'user', 'content' => $text]
-        ],
-        'temperature' => 0.7
-    ];
-
-    $ch = curl_init('https://api.openai.com/v1/chat/completions');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $apiKey,
-        'Content-Type: application/json'
-    ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-
-    $response = curl_exec($ch);
-    $error = curl_error($ch);
-    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($status !== 200 || $error) {
-        throw new Exception("GPT API Fehler ($status): $error | Antwort: $response");
-    }
-
-    $data = json_decode($response, true);
-    return $data['choices'][0]['message']['content'] ?? '';
-}
-
 try {
+    file_put_contents('/tmp/wrapper-log.txt', "Scraper $source wird aufgerufen\n", FILE_APPEND);
     $rawText = scrapeArticle($url);
+
     $cleanText = trim($rawText);
-    if (!$cleanText) {
-        throw new Exception("Kein Text extrahiert");
-    }
-
-    $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
-    $posts = json_decode($postsJson, true);
-    $postId = $posts[0]['id'] ?? null;
-
-    if ($postId) {
-        supabaseRequest('PATCH', 'posts?id=eq.' . $postId, ['articletext' => $cleanText]);
-    }
-
-    $rewritten = rewriteTextWithGPT($cleanText);
-    if (!$rewritten) {
-        throw new Exception("GPT lieferte keinen umgeschriebenen Text zurück");
-    }
-
     ob_clean();
-    echo json_encode(['text' => trim($rewritten)]);
+    echo json_encode(['text' => $cleanText]);
+    file_put_contents('/tmp/wrapper-log.txt', "Scraper erfolgreich\n", FILE_APPEND);
 } catch (Exception $e) {
+    file_put_contents('/tmp/wrapper-log.txt', "Fehler bei scrapeArticle(): " . $e->getMessage() . "\n", FILE_APPEND);
     http_response_code(500);
-    echo json_encode([
-        'error' => $e->getMessage(),
-        'debug' => 'Fehler im Wrapper: ' . $e->getMessage()
-    ]);
+    echo json_encode(['error' => $e->getMessage()]);
 }
