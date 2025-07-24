@@ -81,7 +81,7 @@ function supabaseRequest($method, $endpoint, $body = null) {
 }
 
 function rewriteTextWithGPT($text) {
-    $apiKey = getenv('GPT_KEY');
+    $apiKey = GPT_KEY;
     if (!$apiKey) {
         throw new Exception("GPT_KEY nicht gesetzt");
     }
