@@ -33,7 +33,7 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if ($action === 'rewrite-article') {
     require_once __DIR__ . '/../../backend/scrapersArticles/scrapeArticlesWrapper.php';
-    // Wrapper macht bereits alles inkl. JSON-Ausgabe und exit()
+    exit;
 }
 
 if ($requestMethod === 'GET' && $action === 'posts') {
