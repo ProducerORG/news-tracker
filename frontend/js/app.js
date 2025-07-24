@@ -212,7 +212,9 @@ const sortPosts = (column, toggle = true) => {
 
         if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
-        return 0;
+
+        // Sekundärsortierung nach ID (stabiler Wert)
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
     renderPosts();
 };
