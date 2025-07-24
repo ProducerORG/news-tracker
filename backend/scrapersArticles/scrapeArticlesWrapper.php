@@ -8,13 +8,6 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config/config.php';
 
-$log = [];
-
-function logMsg($msg) {
-    global $log;
-    $log[] = $msg;
-}
-
 $rawInput = file_get_contents('php://input');
 $input = json_decode($rawInput, true);
 
@@ -23,7 +16,7 @@ $source = $input['source'] ?? null;
 
 if (!$url) {
     http_response_code(400);
-    echo json_encode(['error' => 'URL erforderlich', 'log' => ['URL fehlt']]);
+    echo json_encode(['error' => 'URL erforderlich']);
     exit;
 }
 
@@ -40,19 +33,19 @@ if (!$source) {
             break;
         }
     }
+}
 
-    if (!$source) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Source konnte nicht ermittelt werden', 'log' => ['Domain: ' . $host]]);
-        exit;
-    }
+if (!$source) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Source konnte nicht ermittelt werden']);
+    exit;
 }
 
 $scraperPath = __DIR__ . "/$source.php";
 
 if (!file_exists($scraperPath)) {
     http_response_code(404);
-    echo json_encode(['error' => "Kein Scraper für Source '$source'", 'log' => ["Pfad fehlt: $scraperPath"]]);
+    echo json_encode(['error' => "Kein Scraper für Source '$source'"]);
     exit;
 }
 
@@ -60,7 +53,7 @@ require_once $scraperPath;
 
 if (!function_exists('scrapeArticle')) {
     http_response_code(500);
-    echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt im Scraper', 'log' => ["Funktion fehlt in $scraperPath"]]);
+    echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt im Scraper']);
     exit;
 }
 
@@ -124,36 +117,22 @@ function rewriteTextWithGPT($text) {
 }
 
 try {
-    logMsg("Scraper $source wird aufgerufen");
     $rawText = scrapeArticle($url);
-
     $cleanText = trim($rawText);
-    logMsg("Artikeltext geladen (Länge: " . strlen($cleanText) . ")");
 
     $postsJson = supabaseRequest('GET', 'posts?select=id&link=eq.' . urlencode($url));
     $posts = json_decode($postsJson, true);
     $postId = $posts[0]['id'] ?? null;
 
     if ($postId) {
-        logMsg("Post-ID gefunden: $postId");
         supabaseRequest('PATCH', 'posts?id=eq.' . $postId, ['articletext' => $cleanText]);
-        logMsg("Originaltext gespeichert");
-    } else {
-        logMsg("Keine passende Post-ID gefunden");
     }
 
     $rewritten = rewriteTextWithGPT($cleanText);
-    logMsg("GPT-Umschreibung erfolgreich (Länge: " . strlen($rewritten) . ")");
 
     ob_clean();
-    echo json_encode([
-        'text' => trim($rewritten),
-        'log' => $log
-    ]);
+    echo json_encode(['text' => trim($rewritten)]);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
-        'error' => $e->getMessage(),
-        'log' => $log
-    ]);
+    echo json_encode(['error' => $e->getMessage(), 'debug' => 'Exception in wrapper']);
 }
