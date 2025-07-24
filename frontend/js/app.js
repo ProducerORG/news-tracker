@@ -189,11 +189,13 @@ const renderPagination = (totalItems, renderFunction) => {
 
 
 
-const sortPosts = (column) => {
-    if (currentSort.column === column) {
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        currentSort = { column, direction: column === 'date' ? 'desc' : 'asc' };
+const sortPosts = (column, toggle = true) => {
+    if (toggle) {
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = { column, direction: column === 'date' ? 'desc' : 'asc' };
+        }
     }
 
     postsCache.sort((a, b) => {
@@ -224,10 +226,16 @@ const loadPosts = async (resetSort = true) => {
         postsCache = posts;
         buildSourceFilterButtons();
         currentPage = 1;
+
+        // Nur bei resetSort true oder wenn keine Sortierung vorhanden ist
         if (resetSort || !currentSort.column) {
             currentSort = { column: 'date', direction: 'desc' };
+            postsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+        } else {
+            // Wende aktuelle Sortierung erneut an
+            sortPosts(currentSort.column, false);
         }
-        postsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+
         renderPosts();
         document.getElementById('page-title').textContent = 'Meldungen';
     } catch (error) {
@@ -246,8 +254,10 @@ const loadTrash = async () => {
         currentPage = 1;
         if (!currentSort.column) {
             currentSort = { column: 'date', direction: 'desc' };
+            postsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
+        } else {
+            sortPosts(currentSort.column, false);
         }
-        postsCache.sort((a, b) => new Date(b.date) - new Date(a.date));
         renderTrash();
         document.getElementById('page-title').textContent = 'Papierkorb';
     } catch (error) {
