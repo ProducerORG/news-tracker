@@ -600,6 +600,7 @@ function openManualArticleInput(postId, url) {
     actions.appendChild(cancelBtn);
     actions.appendChild(submitBtn);
 
+    container.appendChild(heading);
     container.appendChild(message);
     container.appendChild(link);
     container.appendChild(textarea);
