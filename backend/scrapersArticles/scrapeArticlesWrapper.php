@@ -39,29 +39,33 @@ if (!$source) {
     }
 }
 
-if (!$source) {
+if (!$source && !$manualText) {
     http_response_code(400);
-    echo json_encode(['error' => 'Source nicht ermittelbar']);
+    echo json_encode(['error' => 'Quelle nicht ermittelbar']);
     exit;
 }
 
-$scraperPath = __DIR__ . "/$source.php";
+if (!$manualText) {
+    $scraperPath = __DIR__ . "/$source.php";
 
-if (!file_exists($scraperPath)) {
-    http_response_code(404);
-    echo json_encode(['error' => "Kein Scraper für '$source'"]);
-    exit;
-}
+    if (!file_exists($scraperPath)) {
+        http_response_code(404);
+        echo json_encode(['error' => "Kein Scraper für '$source'"]);
+        exit;
+    }
 
-require_once $scraperPath;
+    require_once $scraperPath;
 
-if (!function_exists('scrapeArticle')) {
-    http_response_code(500);
-    echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt']);
-    exit;
+    if (!function_exists('scrapeArticle')) {
+        http_response_code(500);
+        echo json_encode(['error' => 'scrapeArticle()-Funktion fehlt']);
+        exit;
+    }
 }
 
 try {
+    $manualText = $input['manualText'] ?? null;
+
     if ($manualText && strlen(trim($manualText)) >= 100) {
         $articleText = trim($manualText);
     } else {
