@@ -21,7 +21,8 @@ class Glücksspielwesen {
         while ($page <= $maxPages) {
             $url = $baseUrl . ($page > 1 ? '/page/' . $page . '/' : '/');
             echo "Lade Seite: $url\n";
-            $html = @file_get_contents($url);
+
+            $html = $this->getHtml($url);
             if (!$html) {
                 echo "Seite $url nicht erreichbar. Beende.\n";
                 break;
@@ -78,6 +79,27 @@ class Glücksspielwesen {
         }
 
         return $results;
+    }
+
+    private function getHtml($url) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false, // Bei Problemen mit SSL-Zertifikaten
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            CURLOPT_TIMEOUT => 10
+        ]);
+        $result = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($result === false || $httpCode !== 200) {
+            echo "Fehler beim Laden von $url (HTTP $httpCode)\n";
+            curl_close($ch);
+            return null;
+        }
+        curl_close($ch);
+        return $result;
     }
 
     private function fetchSourceByName($name) {
