@@ -80,16 +80,14 @@ class PokerFirma {
 
     private function fetchUrl($url) {
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            CURLOPT_HTTPHEADER => [
-                'Accept: text/html,application/xhtml+xml',
-                'Accept-Language: de-DE,de;q=0.9',
-                'Referer: https://www.google.com'
-            ]
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:114.0) Gecko/20100101 Firefox/114.0',
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language: de-DE,de;q=0.5',
+            'Referer: https://www.google.com/',
+            'Connection: keep-alive',
+            'Upgrade-Insecure-Requests: 1',
+            'Cache-Control: max-age=0'
         ]);
         $html = curl_exec($ch);
         $info = curl_getinfo($ch);
