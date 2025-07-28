@@ -21,9 +21,9 @@ class PokerFirma {
         while ($page <= $maxPages) {
             $url = ($page === 1) ? $baseUrl : $baseUrl . '/page/' . $page;
             echo "Lade Seite: $url\n";
-            $html = @file_get_contents($url);
+            $html = $this->fetchUrl($url);
             if (!$html) {
-                echo "Seite $url nicht erreichbar. Beende.\n";
+                echo "Seite $url nicht erreichbar oder blockiert. Beende.\n";
                 break;
             }
 
@@ -78,8 +78,36 @@ class PokerFirma {
         return $results;
     }
 
+    private function fetchUrl($url) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            CURLOPT_HTTPHEADER => [
+                'Accept: text/html,application/xhtml+xml',
+                'Accept-Language: de-DE,de;q=0.9',
+                'Referer: https://www.google.com'
+            ]
+        ]);
+        $html = curl_exec($ch);
+        $info = curl_getinfo($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($info['http_code'] !== 200 || !$html) {
+            echo "Fehler beim Laden von $url (HTTP {$info['http_code']})";
+            if ($error) echo " – cURL-Fehler: $error";
+            echo "\n";
+            return false;
+        }
+
+        return $html;
+    }
+
     private function fetchArticleDate($link) {
-        $html = @file_get_contents($link);
+        $html = $this->fetchUrl($link);
         if (!$html) {
             echo "Artikel nicht erreichbar: $link\n";
             return null;
@@ -89,32 +117,25 @@ class PokerFirma {
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
 
-        // Suche nach sichtbarem Datum im Format: "3. Juli 2025"
         $dateNode = $xpath->query('//h3[contains(text(), "Kommentare")]')->item(0);
-        if ($dateNode) {
-            if (preg_match('/(\d{1,2})\.\s*(\w+)\s*(\d{4})/', $dateNode->textContent, $matches)) {
-                $day = $matches[1];
-                $monthName = strtolower($matches[2]);
-                $year = $matches[3];
-
-                $months = [
-                    'januar' => 1, 'februar' => 2, 'märz' => 3, 'april' => 4, 'mai' => 5, 'juni' => 6,
-                    'juli' => 7, 'august' => 8, 'september' => 9, 'oktober' => 10, 'november' => 11, 'dezember' => 12
-                ];
-
-                if (isset($months[$monthName])) {
-                    $date = sprintf('%04d-%02d-%02d 00:00:00', $year, $months[$monthName], $day);
-                    return $date;
-                }
+        if ($dateNode && preg_match('/(\d{1,2})\.\s*(\w+)\s*(\d{4})/', $dateNode->textContent, $m)) {
+            $months = [
+                'januar'=>1,'februar'=>2,'märz'=>3,'april'=>4,'mai'=>5,'juni'=>6,
+                'juli'=>7,'august'=>8,'september'=>9,'oktober'=>10,'november'=>11,'dezember'=>12
+            ];
+            $day = (int)$m[1];
+            $month = $months[strtolower($m[2])] ?? 0;
+            $year = (int)$m[3];
+            if ($month > 0) {
+                return sprintf('%04d-%02d-%02d 00:00:00', $year, $month, $day);
             }
         }
 
-        // Fallback: meta property
-        $metaDate = $xpath->query('//meta[@property="article:published_time"]')->item(0);
-        if ($metaDate) {
-            $dateRaw = $metaDate->getAttribute('content');
-            if (preg_match('/^\d{4}-\d{2}-\d{2}/', $dateRaw)) {
-                return substr($dateRaw, 0, 10) . ' 00:00:00';
+        $meta = $xpath->query('//meta[@property="article:published_time"]')->item(0);
+        if ($meta) {
+            $raw = $meta->getAttribute('content');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}/', $raw)) {
+                return substr($raw, 0, 10) . ' 00:00:00';
             }
         }
 
@@ -132,14 +153,10 @@ class PokerFirma {
         $queryLink = 'posts?select=id&link=eq.' . urlencode($link);
 
         $existsTitle = json_decode(supabaseRequest('GET', $queryTitle), true);
-        if (!empty($existsTitle)) {
-            return true;
-        }
+        if (!empty($existsTitle)) return true;
 
         $existsLink = json_decode(supabaseRequest('GET', $queryLink), true);
-        if (!empty($existsLink)) {
-            return true;
-        }
+        if (!empty($existsLink)) return true;
 
         return false;
     }
