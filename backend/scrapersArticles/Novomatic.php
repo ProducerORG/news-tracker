@@ -16,12 +16,12 @@ function scrapeArticle(string $url): string {
     @$dom->loadHTML($html);
     $xpath = new DOMXPath($dom);
 
-    // Besser gezielt auf konkreten Artikeltext
-    $contentNode = $xpath->query('//div[contains(@class, "text-formatted")]')->item(0);
+    // Präziser XPath für den Artikeltext
+    $contentNode = $xpath->query('//div[contains(@class, "field--name-body") and contains(@class, "field__item")]')->item(0);
     if (!$contentNode) return '';
 
     // Entferne irrelevante Tags
-    $removeTags = ['script', 'style', 'figure', 'figcaption', 'noscript', 'form', 'img', 'svg'];
+    $removeTags = ['script', 'style', 'figure', 'figcaption', 'noscript', 'form', 'img', 'svg', 'a'];
     foreach ($removeTags as $tag) {
         $nodes = $contentNode->getElementsByTagName($tag);
         for ($i = $nodes->length - 1; $i >= 0; $i--) {
