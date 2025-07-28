@@ -106,7 +106,7 @@ function rewriteWithGPT(string $text): string {
     $payload = [
         'model' => 'gpt-4',
         'messages' => [
-            ['role' => 'system', 'content' => 'Formuliere den folgenden Artikeltext journalistisch um. Keine Wiederholungen, keine Quellen. Verwende eine kurzes, ansprechendes, passendes Intro.'],
+            ['role' => 'system', 'content' => 'Formuliere den folgenden Artikeltext journalistisch um. Keine Wiederholungen, keine Quellen. Verwende eine kurzes, ansprechendes, passendes Intro. Falls der Artikel fremdsprachig ist, übersetze ihn ins Deutsche'],
             ['role' => 'user', 'content' => $text]
         ],
         'temperature' => 0.7
