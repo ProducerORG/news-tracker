@@ -573,24 +573,55 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
 }
 
 function openRewritePopup(postId, currentText) {
+    const post = postsCache.find(p => p.id === postId);
+    const originalText = (post?.articletext || '').trim();
+
     const overlay = document.createElement('div');
     overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
 
     const container = document.createElement('div');
-    container.className = 'bg-white p-6 rounded shadow-lg max-w-lg w-full';
+    container.className = 'bg-white p-6 rounded shadow-lg w-full max-w-6xl';
 
-    const textarea = document.createElement('textarea');
-    textarea.value = currentText;
-    textarea.maxLength = 10000;
-    textarea.className = 'w-full h-40 border p-2 text-sm mb-2';
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'flex gap-4 mb-4';
+
+    // Read-only original article text
+    const originalDiv = document.createElement('div');
+    originalDiv.className = 'flex-1 flex flex-col';
+    const originalLabel = document.createElement('label');
+    originalLabel.className = 'text-xs font-bold mb-1';
+    originalLabel.textContent = 'Originaler Artikel';
+    const originalTextarea = document.createElement('textarea');
+    originalTextarea.value = originalText;
+    originalTextarea.readOnly = true;
+    originalTextarea.className = 'w-full h-64 border p-2 text-sm bg-gray-100 resize-none';
+    originalDiv.appendChild(originalLabel);
+    originalDiv.appendChild(originalTextarea);
+
+    // Editable rewritten text
+    const rewriteDiv = document.createElement('div');
+    rewriteDiv.className = 'flex-1 flex flex-col';
+    const rewriteLabel = document.createElement('label');
+    rewriteLabel.className = 'text-xs font-bold mb-1';
+    rewriteLabel.textContent = 'Umschriebener Artikel';
+    const rewriteTextarea = document.createElement('textarea');
+    rewriteTextarea.value = currentText;
+    rewriteTextarea.maxLength = 10000;
+    rewriteTextarea.className = 'w-full h-64 border p-2 text-sm mb-1';
+    rewriteDiv.appendChild(rewriteLabel);
+    rewriteDiv.appendChild(rewriteTextarea);
 
     const counter = document.createElement('div');
-    counter.className = 'text-right text-xs text-gray-500 mb-4';
-    counter.textContent = `${textarea.value.length}/10000 Zeichen`;
-
-    textarea.addEventListener('input', () => {
-        counter.textContent = `${textarea.value.length}/10000 Zeichen`;
+    counter.className = 'text-right text-xs text-gray-500';
+    counter.textContent = `${rewriteTextarea.value.length}/10000 Zeichen`;
+    rewriteTextarea.addEventListener('input', () => {
+        counter.textContent = `${rewriteTextarea.value.length}/10000 Zeichen`;
     });
+    rewriteDiv.appendChild(counter);
+
+    contentWrapper.appendChild(originalDiv);
+    contentWrapper.appendChild(rewriteDiv);
+    container.appendChild(contentWrapper);
 
     const actions = document.createElement('div');
     actions.className = 'flex justify-end gap-2';
@@ -604,7 +635,7 @@ function openRewritePopup(postId, currentText) {
     saveBtn.textContent = 'Speichern';
     saveBtn.className = 'px-4 py-1 bg-[var(--gold)] text-white rounded text-sm hover:bg-yellow-700';
     saveBtn.onclick = async () => {
-        const text = textarea.value.trim();
+        const text = rewriteTextarea.value.trim();
         await fetch(`/public/api.php?action=update-rewritten&id=${postId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -620,9 +651,6 @@ function openRewritePopup(postId, currentText) {
 
     actions.appendChild(cancelBtn);
     actions.appendChild(saveBtn);
-
-    container.appendChild(textarea);
-    container.appendChild(counter);
     container.appendChild(actions);
     overlay.appendChild(container);
 
