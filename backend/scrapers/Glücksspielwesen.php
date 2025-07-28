@@ -15,7 +15,7 @@ class Glücksspielwesen {
         echo "Verwende URL aus DB: {$baseUrl}\n";
 
         $results = [];
-        $html = @file_get_contents($baseUrl);
+        $html = $this->curlGet($baseUrl);
         if (!$html) {
             echo "Seite nicht erreichbar: $baseUrl\n";
             return [];
@@ -24,8 +24,7 @@ class Glücksspielwesen {
         $dom = new DOMDocument();
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
-        
-        // Artikel befinden sich meist im Slider (rs-slide)
+
         $entries = $xpath->query('//rs-slide');
 
         if ($entries->length === 0) {
@@ -90,12 +89,28 @@ class Glücksspielwesen {
             }
         }
 
-        // Fallback: auch 1.7.2025 etc.
         if (preg_match('/\d{1,2}\.\d{1,2}\.\d{4}/', $text, $match)) {
             return DateTime::createFromFormat('d.m.Y H:i:s', $match[0] . ' 00:00:00');
         }
 
         return null;
+    }
+
+    private function curlGet($url) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTPHEADER => [
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Accept: text/html',
+            ]
+        ]);
+        $result = curl_exec($ch);
+        curl_close($ch);
+        return $result;
     }
 
     private function fetchSourceByName($name) {
