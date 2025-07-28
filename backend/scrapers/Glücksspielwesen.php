@@ -31,7 +31,7 @@ class Glücksspielwesen {
             $dom = new DOMDocument();
             @$dom->loadHTML($html);
             $xpath = new DOMXPath($dom);
-            $entries = $xpath->query('//a[.//div[contains(@class,"blog-card")]]');
+            $entries = $xpath->query('//div[contains(@class,"blog-card")]');
 
             if ($entries->length === 0) {
                 echo "Keine Artikel auf Seite $page gefunden. Beende.\n";
@@ -41,16 +41,18 @@ class Glücksspielwesen {
             foreach ($entries as $entry) {
                 $titleNode = $xpath->query('.//h2[contains(@class,"card-title")]', $entry)->item(0);
                 $dateNode = $xpath->query('.//h3', $entry)->item(0);
-                $href = $entry->getAttribute('href');
 
-                if (!$titleNode || !$dateNode || !$href) {
+                // Link aus <a> Elternelement
+                $parentLinkNode = $entry->parentNode;
+                if (!$titleNode || !$dateNode || !$parentLinkNode || $parentLinkNode->nodeName !== 'a') {
                     continue;
                 }
 
                 $title = trim($titleNode->textContent);
+                $href = $parentLinkNode->getAttribute('href');
                 $link = strpos($href, 'http') === 0 ? $href : $baseUrl . '/' . ltrim($href, '/');
 
-                // Datum parsen aus z.B. "24. Juni 2025 | 0 Kommentare"
+                // Datum extrahieren
                 $dateText = trim($dateNode->textContent);
                 $dateTime = $this->parseGermanDate($dateText);
 
