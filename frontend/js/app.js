@@ -528,6 +528,83 @@ function renderRewriteCell(post) {
     }
 }
 
+function openManualArticleInput(postId, url) {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+
+    const container = document.createElement('div');
+    container.className = 'bg-white p-6 rounded shadow-lg w-full max-w-3xl';
+
+    const message = document.createElement('p');
+    message.className = 'mb-4 text-sm text-gray-800';
+    message.textContent = 'Zugriffsfehler. Helfen Sie händisch nach, indem Sie den Artikel aufrufen und den Text hierher kopieren:';
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.textContent = url;
+    link.target = '_blank';
+    link.className = 'block text-blue-600 underline mb-4 break-all';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'w-full h-60 border p-2 text-sm mb-4';
+    textarea.placeholder = 'Fügen Sie den Artikeltext hier ein …';
+
+    const actions = document.createElement('div');
+    actions.className = 'flex justify-end gap-2';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Abbrechen';
+    cancelBtn.className = 'px-4 py-1 border rounded text-sm';
+    cancelBtn.onclick = () => overlay.remove();
+
+    const submitBtn = document.createElement('button');
+    submitBtn.textContent = 'Absenden';
+    submitBtn.className = 'px-4 py-1 bg-[var(--gold)] text-white rounded text-sm hover:bg-yellow-700';
+    submitBtn.onclick = async () => {
+        const manualText = textarea.value.trim();
+        if (manualText.length < 100) {
+            alert('Bitte geben Sie mindestens 100 Zeichen ein.');
+            return;
+        }
+
+        overlay.remove();
+
+        try {
+            const res = await fetch(`/public/api.php?action=rewrite-article`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url, source: '', manualText })
+            });
+            const data = await res.json();
+
+            if (data && data.text) {
+                await fetch(`/public/api.php?action=update-rewritten&id=${postId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rewrittentext: data.text })
+                });
+                loadPosts(false);
+            } else {
+                throw new Error('Umschreibung fehlgeschlagen.');
+            }
+        } catch (err) {
+            console.error('Fehler bei manueller Umschreibung:', err);
+            showErrorNotification(err.message || 'Unbekannter Fehler bei manueller Umschreibung');
+        }
+    };
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(submitBtn);
+
+    container.appendChild(message);
+    container.appendChild(link);
+    container.appendChild(textarea);
+    container.appendChild(actions);
+
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+}
+
 async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
     const link = decodeURIComponent(linkEncoded);
     const source = decodeURIComponent(sourceEncoded);
@@ -558,6 +635,8 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
                 body: JSON.stringify({ rewrittentext: data.text })
             });
             loadPosts(false);
+        } else if (data.manualRequired && data.url) {
+            openManualArticleInput(postId, decodeURIComponent(data.url));
         } else {
             throw new Error('Kein Text erhalten');
         }

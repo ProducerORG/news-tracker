@@ -14,6 +14,8 @@ $input = json_decode($rawInput, true);
 
 $url = $input['url'] ?? null;
 $source = $input['source'] ?? null;
+$manualText = $input['manualText'] ?? null;
+
 
 if (!$url) {
     http_response_code(400);
@@ -60,11 +62,15 @@ if (!function_exists('scrapeArticle')) {
 }
 
 try {
-    $rawText = scrapeArticle($url);
-    if (!$rawText || strlen(trim($rawText)) < 100) {
-        throw new Exception("Artikeltext zu kurz oder leer.");
+    if ($manualText && strlen(trim($manualText)) >= 100) {
+        $articleText = trim($manualText);
+    } else {
+        $rawText = scrapeArticle($url);
+        if (!$rawText || strlen(trim($rawText)) < 100) {
+            throw new Exception("Artikeltext zu kurz oder leer.");
+        }
+        $articleText = trim($rawText);
     }
-    $articleText = trim($rawText);
 
     // GPT-Umschreibung
     $rewritten = rewriteWithGPT($articleText);
@@ -75,9 +81,19 @@ try {
     ob_clean();
     echo json_encode(['text' => $rewritten]);
 } catch (Exception $e) {
-    error_log("Fehler in Wrapper: " . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    $message = $e->getMessage();
+    error_log("Fehler in Wrapper: " . $message);
+    if ($message === 'Artikeltext zu kurz oder leer.') {
+        http_response_code(200);
+        echo json_encode([
+            'manualRequired' => true,
+            'url' => $url,
+            'reason' => 'Artikeltext zu kurz oder leer'
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode(['error' => $message]);
+    }
     exit;
 }
 
