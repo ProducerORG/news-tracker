@@ -1,15 +1,23 @@
 <?php
 function scrapeArticle(string $url): string {
     libxml_use_internal_errors(true);
-    $html = @file_get_contents($url);
+
+    $options = [
+        'http' => [
+            'method' => 'GET',
+            'header' => "User-Agent: Mozilla/5.0\r\n"
+        ]
+    ];
+    $context = stream_context_create($options);
+    $html = @file_get_contents($url, false, $context);
     if (!$html) return '';
 
     $dom = new DOMDocument();
     @$dom->loadHTML($html);
     $xpath = new DOMXPath($dom);
 
-    // Hauptinhalt liegt im div mit class="textInner"
-    $contentNode = $xpath->query('//div[contains(@class, "textInner")]')->item(0);
+    // Besser gezielt auf konkreten Artikeltext
+    $contentNode = $xpath->query('//div[contains(@class, "text-formatted")]')->item(0);
     if (!$contentNode) return '';
 
     // Entferne irrelevante Tags
