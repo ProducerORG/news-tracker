@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../frontend/public/api.php';
 
 class CasinoGesetze {
     public function fetch() {
-        $sourceName = 'Casino-Gesetze';
+        $sourceName = 'CasinoGesetze';
         $source = $this->fetchSourceByName($sourceName);
 
         if (!$source) {
