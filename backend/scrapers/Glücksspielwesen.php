@@ -19,10 +19,9 @@ class Glücksspielwesen {
         $maxPages = 10;
 
         while ($page <= $maxPages) {
-            $url = $baseUrl . ($page > 1 ? '/page/' . $page . '/' : '/');
+            $url = $baseUrl . '/category/aktuelles/page/' . $page . '/';
             echo "Lade Seite: $url\n";
-
-            $html = $this->getHtml($url);
+            $html = @file_get_contents($url);
             if (!$html) {
                 echo "Seite $url nicht erreichbar. Beende.\n";
                 break;
@@ -31,53 +30,47 @@ class Glücksspielwesen {
             $dom = new DOMDocument();
             @$dom->loadHTML($html);
             $xpath = new DOMXPath($dom);
-            $entries = $xpath->query('//div[contains(@class,"blog-card")]');
+            $entries = $xpath->query('//article');
 
             if ($entries->length === 0) {
-                echo "Keine Artikel auf Seite $page gefunden. Beende.\n";
+                echo "Keine Einträge auf Seite $page gefunden. Beende.\n";
                 break;
             }
 
             foreach ($entries as $entry) {
-                $titleNode = $xpath->query('.//h2[contains(@class,"card-title")]', $entry)->item(0);
-                $dateNode = $xpath->query('.//h3', $entry)->item(0);
+                $titleNode = $xpath->query('.//h2 | .//h3', $entry)->item(0);
+                $linkNode = $xpath->query('.//a', $entry)->item(0);
 
-                // Link aus <a> Elternelement
-                $parentLinkNode = $entry->parentNode;
-                if (!$titleNode || !$dateNode || !$parentLinkNode || $parentLinkNode->nodeName !== 'a') {
-                    continue;
+                if ($titleNode && $linkNode) {
+                    $title = trim($titleNode->textContent);
+                    $href = $linkNode->getAttribute('href');
+                    $link = (strpos($href, 'http') === 0) ? $href : 'https://www.gluecksspielwesen.de' . $href;
+
+                    $articleDate = $this->fetchArticleDate($link);
+                    if (!$articleDate) {
+                        echo "Kein Datum gefunden für: $link, wird übersprungen.\n";
+                        continue;
+                    }
+
+                    $dateTime = new DateTime($articleDate);
+                    $limitDate = new DateTime('-6 weeks');
+                    if ($dateTime < $limitDate) {
+                        echo "Übersprungen (zu alt): {$articleDate}\n";
+                        continue;
+                    }
+
+                    if ($this->existsPost($title, $link)) {
+                        echo "Übersprungen (bereits vorhanden): $title\n";
+                        continue;
+                    }
+
+                    $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
+                    $results[] = [
+                        'date' => $dateTime->format('Y-m-d H:i:s'),
+                        'title' => $title,
+                        'link' => $link
+                    ];
                 }
-
-                $title = trim($titleNode->textContent);
-                $href = $parentLinkNode->getAttribute('href');
-                $link = strpos($href, 'http') === 0 ? $href : $baseUrl . '/' . ltrim($href, '/');
-
-                // Datum extrahieren
-                $dateText = trim($dateNode->textContent);
-                $dateTime = $this->parseGermanDate($dateText);
-
-                if (!$dateTime) {
-                    echo "Datum unlesbar für: $link\n";
-                    continue;
-                }
-
-                $limitDate = new DateTime('-6 weeks');
-                if ($dateTime < $limitDate) {
-                    echo "Übersprungen (zu alt): {$dateTime->format('Y-m-d')}\n";
-                    continue;
-                }
-
-                if ($this->existsPost($title, $link)) {
-                    echo "Übersprungen (bereits vorhanden): $title\n";
-                    continue;
-                }
-
-                $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
-                $results[] = [
-                    'date' => $dateTime->format('Y-m-d H:i:s'),
-                    'title' => $title,
-                    'link' => $link
-                ];
             }
 
             $page++;
@@ -86,42 +79,36 @@ class Glücksspielwesen {
         return $results;
     }
 
-    private function parseGermanDate($text) {
-        if (preg_match('/(\d{1,2})\.?\s+([^\d]+)\s+(\d{4})/', $text, $m)) {
-            $monate = [
-                'Januar' => 1, 'Februar' => 2, 'März' => 3, 'April' => 4, 'Mai' => 5, 'Juni' => 6,
-                'Juli' => 7, 'August' => 8, 'September' => 9, 'Oktober' => 10, 'November' => 11, 'Dezember' => 12
-            ];
-            $tag = str_pad($m[1], 2, '0', STR_PAD_LEFT);
-            $monat = $monate[trim($m[2])] ?? 0;
-            $jahr = $m[3];
-
-            if ($monat > 0) {
-                return DateTime::createFromFormat('Y-m-d', "$jahr-" . str_pad($monat, 2, '0', STR_PAD_LEFT) . "-$tag");
-            }
-        }
-        return null;
-    }
-
-    private function getHtml($url) {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            CURLOPT_TIMEOUT => 10
-        ]);
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($result === false || $httpCode !== 200) {
-            echo "Fehler beim Laden von $url (HTTP $httpCode)\n";
-            curl_close($ch);
+    private function fetchArticleDate($link) {
+        $html = @file_get_contents($link);
+        if (!$html) {
+            echo "Artikel nicht erreichbar: $link\n";
             return null;
         }
-        curl_close($ch);
-        return $result;
+
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+
+        // Versuch 1: Zeitstempel im Meta-TAG
+        $metaDate = $xpath->query('//meta[@property="article:modified_time"]')->item(0);
+        if ($metaDate) {
+            $content = $metaDate->getAttribute('content');
+            if (preg_match('/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $content, $matches)) {
+                return substr($matches[0], 0, 10) . ' 00:00:00';
+            }
+        }
+
+        // Versuch 2: Sichtbares Datum im Artikel
+        $timeNode = $xpath->query('//time')->item(0);
+        if ($timeNode) {
+            $datetime = $timeNode->getAttribute('datetime');
+            if (preg_match('/\d{4}-\d{2}-\d{2}/', $datetime, $matches)) {
+                return $matches[0] . ' 00:00:00';
+            }
+        }
+
+        return null;
     }
 
     private function fetchSourceByName($name) {
