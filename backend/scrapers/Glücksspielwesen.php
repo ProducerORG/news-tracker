@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../../frontend/public/api.php';
 
-class Glücksspielwesen {
+class Gluecksspielwesen {
     public function fetch() {
-        $sourceName = 'Glücksspielwesen';
+        $sourceName = 'Gluecksspielwesen';
         $source = $this->fetchSourceByName($sourceName);
 
         if (!$source) {
@@ -31,7 +31,7 @@ class Glücksspielwesen {
             $dom = new DOMDocument();
             @$dom->loadHTML($html);
             $xpath = new DOMXPath($dom);
-            $entries = $xpath->query('//article[contains(@class,"post")]');
+            $entries = $xpath->query('//a[.//div[contains(@class,"blog-card")]]');
 
             if ($entries->length === 0) {
                 echo "Keine Artikel auf Seite $page gefunden. Beende.\n";
@@ -39,17 +39,20 @@ class Glücksspielwesen {
             }
 
             foreach ($entries as $entry) {
-                $titleNode = $xpath->query('.//h2[@class="entry-title"]/a', $entry)->item(0);
-                $dateNode = $xpath->query('.//time', $entry)->item(0);
+                $titleNode = $xpath->query('.//h2[contains(@class,"card-title")]', $entry)->item(0);
+                $dateNode = $xpath->query('.//h3', $entry)->item(0);
+                $href = $entry->getAttribute('href');
 
-                if (!$titleNode || !$dateNode) {
+                if (!$titleNode || !$dateNode || !$href) {
                     continue;
                 }
 
                 $title = trim($titleNode->textContent);
-                $link = $titleNode->getAttribute('href');
-                $dateRaw = $dateNode->getAttribute('datetime');
-                $dateTime = DateTime::createFromFormat('Y-m-d\TH:i:sP', $dateRaw);
+                $link = strpos($href, 'http') === 0 ? $href : $baseUrl . '/' . ltrim($href, '/');
+
+                // Datum parsen aus z.B. "24. Juni 2025 | 0 Kommentare"
+                $dateText = trim($dateNode->textContent);
+                $dateTime = $this->parseGermanDate($dateText);
 
                 if (!$dateTime) {
                     echo "Datum unlesbar für: $link\n";
@@ -81,12 +84,29 @@ class Glücksspielwesen {
         return $results;
     }
 
+    private function parseGermanDate($text) {
+        if (preg_match('/(\d{1,2})\.?\s+([^\d]+)\s+(\d{4})/', $text, $m)) {
+            $monate = [
+                'Januar' => 1, 'Februar' => 2, 'März' => 3, 'April' => 4, 'Mai' => 5, 'Juni' => 6,
+                'Juli' => 7, 'August' => 8, 'September' => 9, 'Oktober' => 10, 'November' => 11, 'Dezember' => 12
+            ];
+            $tag = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $monat = $monate[trim($m[2])] ?? 0;
+            $jahr = $m[3];
+
+            if ($monat > 0) {
+                return DateTime::createFromFormat('Y-m-d', "$jahr-" . str_pad($monat, 2, '0', STR_PAD_LEFT) . "-$tag");
+            }
+        }
+        return null;
+    }
+
     private function getHtml($url) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false, // Bei Problemen mit SSL-Zertifikaten
+            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
             CURLOPT_TIMEOUT => 10
