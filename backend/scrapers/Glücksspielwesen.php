@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../../frontend/public/api.php';
 
-class Gluecksspielwesen {
+class Glücksspielwesen {
     public function fetch() {
-        $sourceName = 'Gluecksspielwesen';
+        $sourceName = 'Glücksspielwesen';
         $source = $this->fetchSourceByName($sourceName);
 
         if (!$source) {
