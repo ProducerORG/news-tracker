@@ -15,97 +15,84 @@ class Glücksspielwesen {
         echo "Verwende URL aus DB: {$baseUrl}\n";
 
         $results = [];
-        $page = 1;
-        $maxPages = 10;
-
-        while ($page <= $maxPages) {
-            $url = $baseUrl . '/category/aktuelles/page/' . $page . '/';
-            echo "Lade Seite: $url\n";
-            $html = @file_get_contents($url);
-            if (!$html) {
-                echo "Seite $url nicht erreichbar. Beende.\n";
-                break;
-            }
-
-            $dom = new DOMDocument();
-            @$dom->loadHTML($html);
-            $xpath = new DOMXPath($dom);
-            $entries = $xpath->query('//article');
-
-            if ($entries->length === 0) {
-                echo "Keine Einträge auf Seite $page gefunden. Beende.\n";
-                break;
-            }
-
-            foreach ($entries as $entry) {
-                $titleNode = $xpath->query('.//h2 | .//h3', $entry)->item(0);
-                $linkNode = $xpath->query('.//a', $entry)->item(0);
-
-                if ($titleNode && $linkNode) {
-                    $title = trim($titleNode->textContent);
-                    $href = $linkNode->getAttribute('href');
-                    $link = (strpos($href, 'http') === 0) ? $href : 'https://www.gluecksspielwesen.de' . $href;
-
-                    $articleDate = $this->fetchArticleDate($link);
-                    if (!$articleDate) {
-                        echo "Kein Datum gefunden für: $link, wird übersprungen.\n";
-                        continue;
-                    }
-
-                    $dateTime = new DateTime($articleDate);
-                    $limitDate = new DateTime('-6 weeks');
-                    if ($dateTime < $limitDate) {
-                        echo "Übersprungen (zu alt): {$articleDate}\n";
-                        continue;
-                    }
-
-                    if ($this->existsPost($title, $link)) {
-                        echo "Übersprungen (bereits vorhanden): $title\n";
-                        continue;
-                    }
-
-                    $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
-                    $results[] = [
-                        'date' => $dateTime->format('Y-m-d H:i:s'),
-                        'title' => $title,
-                        'link' => $link
-                    ];
-                }
-            }
-
-            $page++;
-        }
-
-        return $results;
-    }
-
-    private function fetchArticleDate($link) {
-        $html = @file_get_contents($link);
+        $html = @file_get_contents($baseUrl);
         if (!$html) {
-            echo "Artikel nicht erreichbar: $link\n";
-            return null;
+            echo "Seite nicht erreichbar: $baseUrl\n";
+            return [];
         }
 
         $dom = new DOMDocument();
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
+        
+        // Artikel befinden sich meist im Slider (rs-slide)
+        $entries = $xpath->query('//rs-slide');
 
-        // Versuch 1: Zeitstempel im Meta-TAG
-        $metaDate = $xpath->query('//meta[@property="article:modified_time"]')->item(0);
-        if ($metaDate) {
-            $content = $metaDate->getAttribute('content');
-            if (preg_match('/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $content, $matches)) {
-                return substr($matches[0], 0, 10) . ' 00:00:00';
+        if ($entries->length === 0) {
+            echo "Keine Artikel gefunden auf Startseite.\n";
+            return [];
+        }
+
+        foreach ($entries as $entry) {
+            $title = $entry->getAttribute('data-title');
+            $link = $xpath->query('.//a[contains(@class,"rev-btn")]', $entry)->item(0)?->getAttribute('href');
+            $dateText = $xpath->query('.//rs-layer[contains(@id,"layer-5")]', $entry)->item(0)?->textContent;
+
+            if (!$title || !$link) {
+                echo "Eintrag unvollständig, übersprungen.\n";
+                continue;
+            }
+
+            $date = $this->parseGermanDate($dateText);
+            if (!$date) {
+                echo "Kein gültiges Datum: \"$dateText\" bei $link\n";
+                continue;
+            }
+
+            $limitDate = new DateTime('-6 weeks');
+            if ($date < $limitDate) {
+                echo "Übersprungen (zu alt): {$date->format('Y-m-d')}\n";
+                continue;
+            }
+
+            if ($this->existsPost($title, $link)) {
+                echo "Übersprungen (bereits vorhanden): $title\n";
+                continue;
+            }
+
+            $this->insertPost($date->format('Y-m-d H:i:s'), $source['id'], $title, $link);
+            $results[] = [
+                'date' => $date->format('Y-m-d H:i:s'),
+                'title' => $title,
+                'link' => $link
+            ];
+        }
+
+        return $results;
+    }
+
+    private function parseGermanDate($text) {
+        $text = trim($text);
+        if (preg_match('/\d{1,2}\.\s?[A-Za-zäöüÄÖÜ]+\s?\d{4}/u', $text, $match)) {
+            $months = [
+                'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04',
+                'Mai' => '05', 'Juni' => '06', 'Juli' => '07', 'August' => '08',
+                'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
+            ];
+            foreach ($months as $name => $num) {
+                if (stripos($match[0], $name) !== false) {
+                    $parts = preg_split('/\s+/', str_replace('.', '', $match[0]));
+                    $day = str_pad(preg_replace('/\D/', '', $parts[0]), 2, '0', STR_PAD_LEFT);
+                    $month = $num;
+                    $year = $parts[2] ?? date('Y');
+                    return DateTime::createFromFormat('Y-m-d H:i:s', "$year-$month-$day 00:00:00");
+                }
             }
         }
 
-        // Versuch 2: Sichtbares Datum im Artikel
-        $timeNode = $xpath->query('//time')->item(0);
-        if ($timeNode) {
-            $datetime = $timeNode->getAttribute('datetime');
-            if (preg_match('/\d{4}-\d{2}-\d{2}/', $datetime, $matches)) {
-                return $matches[0] . ' 00:00:00';
-            }
+        // Fallback: auch 1.7.2025 etc.
+        if (preg_match('/\d{1,2}\.\d{1,2}\.\d{4}/', $text, $match)) {
+            return DateTime::createFromFormat('d.m.Y H:i:s', $match[0] . ' 00:00:00');
         }
 
         return null;
