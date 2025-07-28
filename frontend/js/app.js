@@ -535,9 +535,13 @@ function openManualArticleInput(postId, url) {
     const container = document.createElement('div');
     container.className = 'bg-white p-6 rounded shadow-lg w-full max-w-3xl';
 
+    const heading = document.createElement('h3');
+    heading.className = 'text-lg font-semibold text-gray-800 mb-1';
+    heading.textContent = 'Zugriffsfehler';
+
     const message = document.createElement('p');
     message.className = 'mb-4 text-sm text-gray-800';
-    message.textContent = 'Zugriffsfehler. Helfen Sie händisch nach, indem Sie den Artikel aufrufen und den Text hierher kopieren:';
+    message.textContent = 'Helfen Sie händisch nach, indem Sie den Artikel aufrufen und den Text hierher kopieren:';
 
     const link = document.createElement('a');
     link.href = url;
