@@ -536,7 +536,7 @@ function openManualArticleInput(postId, url) {
     container.className = 'bg-white p-6 rounded shadow-lg w-full max-w-3xl';
 
     const heading = document.createElement('h3');
-    heading.className = 'text-lg font-semibold text-gray-800 mb-1';
+    heading.className = 'text-[var(--gold)] text-lg font-semibold text-gray-800 mb-1';
     heading.textContent = 'Zugriffsfehler';
 
     const message = document.createElement('p');
