@@ -13,90 +13,116 @@ class DSWV {
 
         $results = [];
 
-        $pages = [
-            'https://www.dswv.de/',
-            'https://www.dswv.de/presse/'
-        ];
+        // Hauptseite
+        $html = @file_get_contents('https://www.dswv.de/');
+        if ($html) {
+            echo "Lade Seite: https://www.dswv.de/\n";
+            $results = array_merge($results, $this->parseMainPage($html, $source));
+        }
 
-        foreach ($pages as $url) {
-            echo "Lade Seite: $url\n";
-            $html = @file_get_contents($url);
-            if (!$html) {
-                echo "Fehler beim Laden von $url\n";
+        // Presse-Unterseite
+        $html = @file_get_contents('https://www.dswv.de/presse/');
+        if ($html) {
+            echo "Lade Seite: https://www.dswv.de/presse/\n";
+            $results = array_merge($results, $this->parsePressePage($html, $source));
+        }
+
+        return $results;
+    }
+
+    private function parseMainPage($html, $source) {
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+
+        $entries = $xpath->query('//swiper-slide//a');
+        $results = [];
+
+        foreach ($entries as $entry) {
+            $href = $entry->getAttribute('href');
+            $link = (strpos($href, 'http') === 0) ? $href : 'https://www.dswv.de' . $href;
+
+            $titleNode = $xpath->query('.//div[contains(@class,"text")]', $entry)->item(0);
+            if (!$titleNode) continue;
+
+            $title = trim($titleNode->textContent);
+            if (strlen($title) < 10) continue;
+
+            $articleDate = $this->fetchArticleDate($link);
+            if (!$articleDate) {
+                echo "Kein Datum gefunden für: $link\n";
                 continue;
             }
 
-            $dom = new DOMDocument();
-            @$dom->loadHTML($html);
-            $xpath = new DOMXPath($dom);
-
-            // Gemeinsamer Query für Artikel-Links auf beiden Seiten
-            $entries = $xpath->query('//a[contains(@href,"/")]');
-
-            foreach ($entries as $entry) {
-                $href = $entry->getAttribute('href');
-                if (strpos($href, '/kontakt/') !== false || strpos($href, '/jobs/') !== false || strpos($href, '/impressum') !== false) {
-                    continue;
-                }
-
-                $link = (strpos($href, 'http') === 0) ? $href : 'https://www.dswv.de' . $href;
-                $title = trim($entry->textContent);
-
-                if (strlen($title) < 10 || empty($title)) {
-                    continue;
-                }
-
-                // Suche nach <time datetime="..."> innerhalb des gleichen Ankers
-                $dateNode = $xpath->query('.//time[@datetime]', $entry)->item(0);
-                $articleDate = null;
-
-                if ($dateNode) {
-                    $dateText = trim($dateNode->getAttribute('datetime'));
-
-                    // Umwandlung von deutschem Datum in ISO
-                    $months = [
-                        'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04', 'Mai' => '05', 'Juni' => '06',
-                        'Juli' => '07', 'August' => '08', 'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
-                    ];
-                    if (preg_match('/(\d{1,2})\.\s*([A-Za-zäöüÄÖÜ]+)\s*(\d{4})/', $dateText, $m)) {
-                        $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
-                        $month = $months[$m[2]] ?? '01';
-                        $year = $m[3];
-                        $articleDate = "$year-$month-$day 00:00:00";
-                    } elseif (preg_match('/\d{4}-\d{2}-\d{2}/', $dateText)) {
-                        $articleDate = $dateText . ' 00:00:00';
-                    }
-                }
-
-                if (!$articleDate) {
-                    echo "Kein Datum im Teasereintrag gefunden, versuche Detailseite: $link\n";
-                    $articleDate = $this->fetchArticleDate($link);
-                }
-
-                if (!$articleDate) {
-                    echo "Kein Datum gefunden für: $link\n";
-                    continue;
-                }
-
-                $dateTime = new DateTime($articleDate);
-                $limitDate = new DateTime('-6 weeks');
-                if ($dateTime < $limitDate) {
-                    echo "Übersprungen (zu alt): $articleDate\n";
-                    continue;
-                }
-
-                if ($this->existsPost($title, $link)) {
-                    echo "Übersprungen (bereits vorhanden): $title\n";
-                    continue;
-                }
-
-                $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
-                $results[] = [
-                    'date' => $dateTime->format('Y-m-d H:i:s'),
-                    'title' => $title,
-                    'link' => $link
-                ];
+            $dateTime = new DateTime($articleDate);
+            $limitDate = new DateTime('-6 weeks');
+            if ($dateTime < $limitDate) {
+                echo "Übersprungen (zu alt): $articleDate\n";
+                continue;
             }
+
+            if ($this->existsPost($title, $link)) {
+                echo "Übersprungen (bereits vorhanden): $title\n";
+                continue;
+            }
+
+            $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
+            $results[] = [
+                'date' => $dateTime->format('Y-m-d H:i:s'),
+                'title' => $title,
+                'link' => $link
+            ];
+        }
+
+        return $results;
+    }
+
+    private function parsePressePage($html, $source) {
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+
+        $entries = $xpath->query('//a[contains(@class, "block") and .//time]');
+        $results = [];
+
+        foreach ($entries as $entry) {
+            $href = $entry->getAttribute('href');
+            $link = (strpos($href, 'http') === 0) ? $href : 'https://www.dswv.de' . $href;
+
+            $titleNode = $xpath->query('.//h3', $entry)->item(0);
+            if (!$titleNode) continue;
+
+            $title = trim($titleNode->textContent);
+            if (strlen($title) < 10) continue;
+
+            $dateNode = $xpath->query('.//time', $entry)->item(0);
+            if (!$dateNode) continue;
+
+            $dateRaw = $dateNode->getAttribute('datetime');
+            $articleDate = $this->parseGermanDate($dateRaw);
+            if (!$articleDate) {
+                echo "Kein gültiges Datum in Teasereintrag: $link\n";
+                continue;
+            }
+
+            $dateTime = new DateTime($articleDate);
+            $limitDate = new DateTime('-6 weeks');
+            if ($dateTime < $limitDate) {
+                echo "Übersprungen (zu alt): $articleDate\n";
+                continue;
+            }
+
+            if ($this->existsPost($title, $link)) {
+                echo "Übersprungen (bereits vorhanden): $title\n";
+                continue;
+            }
+
+            $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
+            $results[] = [
+                'date' => $dateTime->format('Y-m-d H:i:s'),
+                'title' => $title,
+                'link' => $link
+            ];
         }
 
         return $results;
@@ -112,28 +138,39 @@ class DSWV {
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
 
-        // Suche nach <time datetime="...">-Element
-        $timeNode = $xpath->query('//time[@datetime]')->item(0);
-        if ($timeNode) {
-            $raw = trim($timeNode->getAttribute('datetime'));
-            // Format wie "27. Juni 2025" oder "2025-07-27"
-            if (preg_match('/\d{2}\.\s*[A-Za-zäöüÄÖÜ]+\.?\s*\d{4}/u', $raw)) {
-                $germanDate = DateTime::createFromFormat('d. M Y', $raw);
-                if (!$germanDate) {
-                    $raw = str_replace(['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                                        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'],
-                                       ['01', '02', '03', '04', '05', '06',
-                                        '07', '08', '09', '10', '11', '12'], $raw);
-                    $raw = preg_replace('/\s+/', ' ', $raw);
-                    if (preg_match('/(\d{2})\. (\d{2}) (\d{4})/', $raw, $matches)) {
-                        return "{$matches[3]}-{$matches[2]}-{$matches[1]} 00:00:00";
-                    }
-                } else {
-                    return $germanDate->format('Y-m-d') . ' 00:00:00';
-                }
-            } elseif (preg_match('/\d{4}-\d{2}-\d{2}/', $raw)) {
-                return $raw . ' 00:00:00';
+        $dateNode = $xpath->query('//time[@datetime]')->item(0);
+        if ($dateNode) {
+            $dateRaw = trim($dateNode->getAttribute('datetime'));
+            return $this->parseGermanDate($dateRaw);
+        }
+
+        $metaDate = $xpath->query('//meta[@name="date"]')->item(0);
+        if ($metaDate) {
+            $dateRaw = $metaDate->getAttribute('content');
+            if (preg_match('/\d{4}-\d{2}-\d{2}/', $dateRaw)) {
+                return $dateRaw . ' 00:00:00';
             }
+        }
+
+        return null;
+    }
+
+    private function parseGermanDate($text) {
+        $text = trim($text);
+        $monate = [
+            'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04', 'Mai' => '05', 'Juni' => '06',
+            'Juli' => '07', 'August' => '08', 'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
+        ];
+
+        if (preg_match('/(\d{1,2})\.\s*([A-Za-zäöüÄÖÜ]+)\s*(\d{4})/', $text, $m)) {
+            $tag = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $monat = $monate[$m[2]] ?? null;
+            $jahr = $m[3];
+            if ($monat) return "$jahr-$monat-$tag 00:00:00";
+        }
+
+        if (preg_match('/\d{4}-\d{2}-\d{2}/', $text)) {
+            return $text . ' 00:00:00';
         }
 
         return null;
