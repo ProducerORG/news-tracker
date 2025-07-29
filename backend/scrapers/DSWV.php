@@ -30,21 +30,24 @@ class DSWV {
             @$dom->loadHTML($html);
             $xpath = new DOMXPath($dom);
 
-            $articles = $xpath->query('//a[contains(@href, "/")]//h3[contains(@class, "text-")]');
+            // Suche alle <a>-Container mit h3-Titel darin
+            $aNodes = $xpath->query('//a[.//h3]');
 
-            if ($articles->length === 0) {
+            if ($aNodes->length === 0) {
                 echo "Keine Artikel auf $url gefunden.\n";
                 continue;
             }
 
-            foreach ($articles as $node) {
-                $aTag = $node->parentNode;
-                $title = trim($node->textContent);
+            foreach ($aNodes as $aTag) {
+                $titleNode = $xpath->query('.//h3', $aTag)->item(0);
+                if (!$titleNode) continue;
+
+                $title = trim($titleNode->textContent);
                 $href = $aTag->getAttribute('href');
                 $link = strpos($href, 'http') === 0 ? $href : 'https://www.dswv.de' . $href;
 
-                $dateNode = $xpath->query('.//time', $aTag->parentNode)->item(0);
-                $dateText = $dateNode ? trim($dateNode->textContent) : null;
+                $timeNode = $xpath->query('.//time', $aTag)->item(0);
+                $dateText = $timeNode ? trim($timeNode->textContent) : null;
                 $articleDate = $this->parseDate($dateText);
 
                 if (!$articleDate) {
