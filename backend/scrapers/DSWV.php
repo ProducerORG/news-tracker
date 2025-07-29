@@ -7,23 +7,22 @@ class DSWV {
         $source = $this->fetchSourceByName($sourceName);
 
         if (!$source) {
-            echo "Quelle $sourceName nicht gefunden.\n";
+            echo "Source $sourceName nicht gefunden.\n";
             return [];
         }
 
-        echo "Verarbeite Quelle: {$sourceName} (UUID: {$source['id']})\n";
-        $results = [];
-
-        $pages = [
-            'https://www.dswv.de/',             // Hauptseite
-            'https://www.dswv.de/presse/'       // Pressebereich
+        $urls = [
+            'https://www.dswv.de/',
+            'https://www.dswv.de/presse/'
         ];
 
-        foreach ($pages as $url) {
-            echo "Lade Seite: $url\n";
+        $results = [];
+
+        foreach ($urls as $url) {
+            echo "Lade URL: $url\n";
             $html = @file_get_contents($url);
             if (!$html) {
-                echo "Fehler beim Laden von $url\n";
+                echo "Seite $url nicht erreichbar. Überspringe.\n";
                 continue;
             }
 
@@ -31,122 +30,88 @@ class DSWV {
             @$dom->loadHTML($html);
             $xpath = new DOMXPath($dom);
 
-            if (strpos($url, '/presse') !== false) {
-                // Presse-Seite mit klarer Struktur: <a><time>...<h3>...</a>
-                $entries = $xpath->query('//a[.//time[@datetime]]');
+            $articles = $xpath->query('//a[contains(@href, "/")]//h3[contains(@class, "text-")]');
 
-                foreach ($entries as $entry) {
-                    $titleNode = $xpath->query('.//h3', $entry)->item(0);
-                    $dateNode = $xpath->query('.//time[@datetime]', $entry)->item(0);
-                    if (!$titleNode || !$dateNode) continue;
+            if ($articles->length === 0) {
+                echo "Keine Artikel auf $url gefunden.\n";
+                continue;
+            }
 
-                    $title = trim($titleNode->textContent);
-                    $link = 'https://www.dswv.de' . $entry->getAttribute('href');
-                    $dateRaw = $dateNode->getAttribute('datetime');
+            foreach ($articles as $node) {
+                $aTag = $node->parentNode;
+                $title = trim($node->textContent);
+                $href = $aTag->getAttribute('href');
+                $link = strpos($href, 'http') === 0 ? $href : 'https://www.dswv.de' . $href;
 
-                    $articleDate = $this->parseGermanDate($dateRaw);
-                    if (!$articleDate) {
-                        echo "Kein Datum interpretierbar: $dateRaw\n";
-                        continue;
-                    }
+                $dateNode = $xpath->query('.//time', $aTag->parentNode)->item(0);
+                $dateText = $dateNode ? trim($dateNode->textContent) : null;
+                $articleDate = $this->parseDate($dateText);
 
-                    $this->processEntry($articleDate, $title, $link, $source, $results);
+                if (!$articleDate) {
+                    echo "Kein gültiges Datum für: $link, wird übersprungen.\n";
+                    continue;
                 }
 
-            } else {
-                // Hauptseite: keine sichtbaren Datumsangaben → Einzelartikel prüfen
-                $entries = $xpath->query('//swiper-slide//a[@href]');
-                foreach ($entries as $entry) {
-                    $link = 'https://www.dswv.de' . $entry->getAttribute('href');
-                    $titleNode = $xpath->query('.//div[contains(@class,"truncate")]', $entry)->item(0);
-                    if (!$titleNode) continue;
-
-                    $title = trim($titleNode->textContent);
-                    $articleDate = $this->fetchArticleDate($link);
-                    if (!$articleDate) {
-                        echo "Kein Datum gefunden für: $link\n";
-                        continue;
-                    }
-
-                    $this->processEntry($articleDate, $title, $link, $source, $results);
+                $dateTime = new DateTime($articleDate);
+                $limitDate = new DateTime('-6 weeks');
+                if ($dateTime < $limitDate) {
+                    echo "Übersprungen (zu alt): {$articleDate}\n";
+                    continue;
                 }
+
+                if ($this->existsPost($title, $link)) {
+                    echo "Übersprungen (bereits vorhanden): $title\n";
+                    continue;
+                }
+
+                $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
+                $results[] = [
+                    'date' => $dateTime->format('Y-m-d H:i:s'),
+                    'title' => $title,
+                    'link' => $link
+                ];
             }
         }
 
-        echo "Gefundene Einträge: " . count($results) . "\n";
-        foreach ($results as $r) {
-            echo "- {$r['date']} | {$r['title']}\n";
-        }
         return $results;
     }
 
-    private function fetchArticleDate($link) {
-        $html = @file_get_contents($link);
-        if (!$html) return null;
+    private function parseDate($text) {
+        if (!$text) return null;
 
-        $dom = new DOMDocument();
-        @$dom->loadHTML($html);
-        $xpath = new DOMXPath($dom);
+        // Standardformate prüfen: "27. Juni 2025" oder "15. Feb. 2024"
+        $replacements = [
+            'Januar' => '01', 'Februar' => '02', 'März' => '03',
+            'April' => '04', 'Mai' => '05', 'Juni' => '06',
+            'Juli' => '07', 'August' => '08', 'September' => '09',
+            'Oktober' => '10', 'November' => '11', 'Dezember' => '12',
+            'Jan.' => '01', 'Feb.' => '02', 'Mär.' => '03',
+            'Apr.' => '04', 'Mai' => '05', 'Jun.' => '06',
+            'Jul.' => '07', 'Aug.' => '08', 'Sep.' => '09',
+            'Okt.' => '10', 'Nov.' => '11', 'Dez.' => '12'
+        ];
 
-        // Versuche <time datetime="...">
-        $timeNode = $xpath->query('//time[@datetime]')->item(0);
-        if ($timeNode) {
-            return $this->parseGermanDate($timeNode->getAttribute('datetime'));
-        }
-
-        // Versuche <meta name="date" content="2025-07-01">
-        $metaNode = $xpath->query('//meta[@name="date"]')->item(0);
-        if ($metaNode) {
-            $date = $metaNode->getAttribute('content');
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-                return $date . ' 00:00:00';
+        foreach ($replacements as $k => $v) {
+            if (stripos($text, $k) !== false) {
+                $text = str_ireplace($k, $v, $text);
+                break;
             }
         }
 
-        return null;
-    }
-
-    private function parseGermanDate($dateStr) {
-        $months = [
-            'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04', 'Mai' => '05', 'Juni' => '06',
-            'Juli' => '07', 'August' => '08', 'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
-        ];
-
-        if (preg_match('/(\d{1,2})\.?\s*([A-Za-zäöüÄÖÜ]+)\s*(\d{4})/u', $dateStr, $m)) {
-            $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
-            $month = $months[$m[2]] ?? null;
-            $year = $m[3];
-            if ($month) {
-                return "$year-$month-$day 00:00:00";
-            }
+        if (preg_match('/(\d{1,2})\.\s*(\d{2})\.\s*(\d{4})/', $text, $m)) {
+            return sprintf('%04d-%02d-%02d 00:00:00', $m[3], $m[2], $m[1]);
         }
 
-        if (preg_match('/\d{4}-\d{2}-\d{2}/', $dateStr)) {
-            return $dateStr . ' 00:00:00';
+        if (preg_match('/(\d{1,2})\.\s*(\d{2})\s*(\d{4})/', $text, $m)) {
+            return sprintf('%04d-%02d-%02d 00:00:00', $m[3], $m[2], $m[1]);
+        }
+
+        if (preg_match('/(\d{1,2})\.\s*(\d{2})/', $text, $m)) {
+            $year = date('Y');
+            return sprintf('%04d-%02d-%02d 00:00:00', $year, $m[2], $m[1]);
         }
 
         return null;
-    }
-
-    private function processEntry($articleDate, $title, $link, $source, &$results) {
-        $dateTime = new DateTime($articleDate);
-        $limitDate = new DateTime('-6 weeks');
-        if ($dateTime < $limitDate) {
-            echo "Übersprungen (zu alt): $articleDate\n";
-            return;
-        }
-
-        if ($this->existsPost($title, $link)) {
-            echo "Übersprungen (bereits vorhanden): $title\n";
-            return;
-        }
-
-        $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
-        $results[] = [
-            'date' => $dateTime->format('Y-m-d H:i:s'),
-            'title' => $title,
-            'link' => $link
-        ];
     }
 
     private function fetchSourceByName($name) {
