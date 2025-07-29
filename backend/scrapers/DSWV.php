@@ -46,41 +46,31 @@ class DSWV {
                     continue;
                 }
 
-                // Versuche, das Datum im Elternelement zu finden
-                $parent = $entry->parentNode;
-                $dateNode = null;
-
-                while ($parent && !$dateNode) {
-                    $dateNode = (new DOMXPath($dom))->query('.//time[@datetime]', $parent)->item(0);
-                    $parent = $parent->parentNode;
-                }
+                // Suche nach <time datetime="..."> innerhalb des gleichen Ankers
+                $dateNode = $xpath->query('.//time[@datetime]', $entry)->item(0);
+                $articleDate = null;
 
                 if ($dateNode) {
                     $dateText = trim($dateNode->getAttribute('datetime'));
 
-                    // Umwandlung von deutschem Datumsformat in ISO
-                    if (preg_match('/\d{1,2}\.\s*[A-Za-zäöüÄÖÜ]+\.?\s*\d{4}/u', $dateText)) {
-                        $dateText = str_replace(
-                            ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'],
-                            ['01', '02', '03', '04', '05', '06',
-                            '07', '08', '09', '10', '11', '12'],
-                            $dateText
-                        );
-
-                        $parts = explode('.', preg_replace('/\s+/', ' ', $dateText));
-                        if (count($parts) === 3) {
-                            $articleDate = sprintf('%04d-%02d-%02d 00:00:00', (int)trim($parts[2]), (int)trim($parts[1]), (int)trim($parts[0]));
-                        } else {
-                            $articleDate = null;
-                        }
+                    // Umwandlung von deutschem Datum in ISO
+                    $months = [
+                        'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04', 'Mai' => '05', 'Juni' => '06',
+                        'Juli' => '07', 'August' => '08', 'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
+                    ];
+                    if (preg_match('/(\d{1,2})\.\s*([A-Za-zäöüÄÖÜ]+)\s*(\d{4})/', $dateText, $m)) {
+                        $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                        $month = $months[$m[2]] ?? '01';
+                        $year = $m[3];
+                        $articleDate = "$year-$month-$day 00:00:00";
                     } elseif (preg_match('/\d{4}-\d{2}-\d{2}/', $dateText)) {
                         $articleDate = $dateText . ' 00:00:00';
-                    } else {
-                        $articleDate = null;
                     }
-                } else {
-                    $articleDate = $this->fetchArticleDate($link); // Fallback
+                }
+
+                if (!$articleDate) {
+                    echo "Kein Datum im Teasereintrag gefunden, versuche Detailseite: $link\n";
+                    $articleDate = $this->fetchArticleDate($link);
                 }
 
                 if (!$articleDate) {
