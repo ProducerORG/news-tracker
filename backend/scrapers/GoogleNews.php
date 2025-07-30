@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../../frontend/public/api.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 use GuzzleHttp\Client;
 
 class GoogleNews {
