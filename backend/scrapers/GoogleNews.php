@@ -6,8 +6,6 @@ use GuzzleHttp\Client;
 
 class GoogleNews {
     public function fetch() {
-        require_once __DIR__ . '/../config/config.php';
-
         $sourceName = 'GoogleNews';
         $source = $this->fetchSourceByName($sourceName);
 
@@ -37,16 +35,20 @@ class GoogleNews {
         $collected = 0;
 
         foreach ($keywordList as $keyword) {
-            if ($collected >= $totalLimit) break;
+            $keyword = trim($keyword);
+            echo "Suche nach Keyword: {$keyword}\n";
+
+            if ($collected >= $totalLimit) {
+                echo "Limit erreicht, restliche Keywords werden übersprungen.\n";
+                break;
+            }
 
             $postData = [[
                 "language_code" => "de",
                 "location_code" => 2276,
-                "keyword" => trim($keyword),
+                "keyword" => $keyword,
                 "calculate_rectangles" => true
             ]];
-
-            echo "Suche nach Keyword: " . trim($keyword) . "\n";
 
             try {
                 $response = $client->post('/v3/serp/google/news/live/advanced', [
@@ -85,6 +87,9 @@ class GoogleNews {
 
                     $collected++;
                 }
+
+                echo "Gefundene Artikel bisher: $collected\n";
+
             } catch (\Exception $e) {
                 echo "Fehler bei Keyword '$keyword': " . $e->getMessage() . "\n";
                 continue;
