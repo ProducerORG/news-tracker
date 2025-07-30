@@ -24,7 +24,6 @@ class DSBV {
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
 
-        // Artikel-Container: alle <article>
         $articles = $xpath->query('//main//article');
 
         if ($articles->length === 0) {
@@ -35,7 +34,7 @@ class DSBV {
         $results = [];
         foreach ($articles as $article) {
             $titleNode = $xpath->query('.//header/h1', $article)->item(0);
-            $dateNode = $xpath->query('.//section//p[strong[contains(text(),"Potsdam") or contains(text(),"Berlin")]]', $article)->item(0);
+            $dateNode = $xpath->query('.//section//p[1]')->item(0); // weniger restriktiv
 
             if (!$titleNode || !$dateNode) {
                 echo "Titel oder Datum fehlt – Artikel wird übersprungen.\n";
@@ -56,7 +55,6 @@ class DSBV {
                 continue;
             }
 
-            // Es gibt keine Einzel-URLs – also generierte interne Anker-Links verwenden
             $linkHash = md5($title);
             $link = $baseUrl . '#article-' . $linkHash;
 
@@ -77,14 +75,26 @@ class DSBV {
     }
 
     private function extractDateFromText($text) {
-        if (preg_match('/(\d{1,2})\.\s?([a-zäöü]+)\s?(\d{4})/iu', $text, $matches)) {
+        $text = str_replace(['&nbsp;', ' '], ' ', $text); // normale & geschützte Leerzeichen
+        $text = trim($text);
+
+        if (preg_match('/(\d{1,2})\.?\s*([a-zäöüA-ZÄÖÜ]+)\s+(\d{4})/u', $text, $matches)) {
             $months = [
-                'januar' => '01', 'februar' => '02', 'märz' => '03', 'april' => '04',
-                'mai' => '05', 'juni' => '06', 'juli' => '07', 'august' => '08',
-                'september' => '09', 'oktober' => '10', 'november' => '11', 'dezember' => '12'
+                'januar' => '01', 'jan' => '01',
+                'februar' => '02', 'feb' => '02',
+                'märz' => '03', 'maerz' => '03',
+                'april' => '04',
+                'mai' => '05',
+                'juni' => '06',
+                'juli' => '07',
+                'august' => '08',
+                'september' => '09', 'sept' => '09',
+                'oktober' => '10', 'okt' => '10',
+                'november' => '11', 'nov' => '11',
+                'dezember' => '12', 'dez' => '12'
             ];
             $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-            $monthText = strtolower($matches[2]);
+            $monthText = strtolower(trim($matches[2]));
             $month = $months[$monthText] ?? null;
             $year = $matches[3];
 
