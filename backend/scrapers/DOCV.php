@@ -26,24 +26,24 @@ class DOCV {
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
 
-        $entries = $xpath->query('//div[contains(@class,"card-columns")]/div[contains(@class,"card-link")]');
+        // Korrigierter XPath: <a class="card-link">
+        $entries = $xpath->query('//div[contains(@class,"card-columns")]//a[contains(@class,"card-link")]');
         if ($entries->length === 0) {
             echo "Keine Einträge gefunden. Beende.\n";
             return [];
         }
 
         foreach ($entries as $entry) {
-            $linkNode = $xpath->query('.//a', $entry)->item(0);
-            $titleNode = $xpath->query('.//h5', $entry)->item(0);
+            $titleNode = $xpath->query('.//h5[contains(@class,"card-title")]', $entry)->item(0);
             $dateNode = $xpath->query('.//small[contains(@class,"text-muted")]', $entry)->item(0);
 
-            if (!$linkNode || !$titleNode || !$dateNode) {
+            if (!$titleNode || !$dateNode) {
                 echo "Unvollständiger Eintrag, wird übersprungen.\n";
                 continue;
             }
 
             $title = trim($titleNode->textContent);
-            $href = $linkNode->getAttribute('href');
+            $href = $entry->getAttribute('href');
             $link = (strpos($href, 'http') === 0) ? $href : 'https://casinoverband.de' . $href;
             $dateRaw = trim($dateNode->textContent);
 
