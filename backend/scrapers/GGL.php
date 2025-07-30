@@ -14,87 +14,91 @@ class GGL {
         $baseUrl = rtrim($source['url'], '/');
         echo "Verwende URL aus DB: {$baseUrl}\n";
 
-        $html = @file_get_contents($baseUrl);
-        if (!$html) {
-            echo "Seite $baseUrl nicht erreichbar. Beende.\n";
-            return [];
-        }
-
-        $dom = new DOMDocument();
-        @$dom->loadHTML($html);
-        $xpath = new DOMXPath($dom);
-
-        $entries = $xpath->query('//div[contains(@class,"el-item")]');
-        if ($entries->length === 0) {
-            echo "Keine Einträge gefunden.\n";
-            return [];
-        }
-
         $results = [];
-        foreach ($entries as $entry) {
-            $titleNode = $xpath->query('.//div[contains(@class,"el-title")]', $entry)->item(0);
-            $linkNode = $xpath->query('.//a[contains(@class,"el-link")]', $entry)->item(0);
-            $dateNode = $xpath->query('.//div[contains(@class,"el-meta")]', $entry)->item(0);
+        $page = 0;
+        $step = 6;
+        $maxPages = 10;
 
-            if (!$titleNode || !$linkNode || !$dateNode) {
-                echo "Unvollständiger Eintrag – übersprungen.\n";
-                continue;
+        while ($page < $maxPages) {
+            $offset = $page * $step;
+            $url = $baseUrl . '?start=' . $offset;
+            echo "Lade Seite: $url\n";
+
+            $html = @file_get_contents($url);
+            if (!$html) {
+                echo "Seite $url nicht erreichbar. Beende.\n";
+                break;
             }
 
-            $title = trim($titleNode->textContent);
-            $href = $linkNode->getAttribute('href');
-            $link = (strpos($href, 'http') === 0) ? $href : 'https://www.gluecksspiel-behoerde.de' . $href;
-            $dateText = trim($dateNode->textContent);
+            $dom = new DOMDocument();
+            @$dom->loadHTML($html);
+            $xpath = new DOMXPath($dom);
 
-            $articleDate = $this->parseGermanDate($dateText);
-            if (!$articleDate) {
-                echo "Kein gültiges Datum für: $link – übersprungen.\n";
-                continue;
+            $entries = $xpath->query('//div[contains(@class,"el-item")]');
+
+            if ($entries->length === 0) {
+                echo "Keine Einträge auf Seite $page gefunden. Beende.\n";
+                break;
             }
 
-            $dateTime = new DateTime($articleDate);
-            $limitDate = new DateTime('-6 weeks');
-            if ($dateTime < $limitDate) {
-                echo "Übersprungen (zu alt): {$articleDate}\n";
-                continue;
+            foreach ($entries as $entry) {
+                $titleNode = $xpath->query('.//div[contains(@class,"el-title")]', $entry)->item(0);
+                $dateNode  = $xpath->query('.//div[contains(@class,"el-meta")]', $entry)->item(0);
+                $linkNode  = $xpath->query('.//a[contains(@class,"el-link")]', $entry)->item(0);
+
+                if ($titleNode && $dateNode && $linkNode) {
+                    $title = trim($titleNode->textContent);
+                    $dateText = trim($dateNode->textContent);
+                    $href = $linkNode->getAttribute('href');
+                    $link = (strpos($href, 'http') === 0) ? $href : 'https://www.gluecksspiel-behoerde.de' . $href;
+
+                    $articleDate = $this->parseGermanDate($dateText);
+                    if (!$articleDate) {
+                        echo "Kein Datum erkannt für: $link, wird übersprungen.\n";
+                        continue;
+                    }
+
+                    $dateTime = new DateTime($articleDate);
+                    $limitDate = new DateTime('-6 weeks');
+                    if ($dateTime < $limitDate) {
+                        echo "Übersprungen (zu alt): {$articleDate}\n";
+                        continue;
+                    }
+
+                    if ($this->existsPost($title, $link)) {
+                        echo "Übersprungen (bereits vorhanden): $title\n";
+                        continue;
+                    }
+
+                    $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
+                    $results[] = [
+                        'date' => $dateTime->format('Y-m-d H:i:s'),
+                        'title' => $title,
+                        'link' => $link
+                    ];
+                }
             }
 
-            if ($this->existsPost($title, $link)) {
-                echo "Übersprungen (bereits vorhanden): $title\n";
-                continue;
-            }
-
-            $this->insertPost($dateTime->format('Y-m-d H:i:s'), $source['id'], $title, $link);
-            $results[] = [
-                'date' => $dateTime->format('Y-m-d H:i:s'),
-                'title' => $title,
-                'link' => $link
-            ];
+            $page++;
         }
 
         return $results;
     }
 
     private function parseGermanDate($text) {
-        // Entferne Leerzeichen und normalize
-        $text = trim($text);
-
-        // Erwarte Format: z.B. 02. Juli 2025
-        $monate = [
-            'Januar' => '01', 'Februar' => '02', 'März' => '03',
-            'April' => '04', 'Mai' => '05', 'Juni' => '06',
-            'Juli' => '07', 'August' => '08', 'September' => '09',
-            'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
+        // Erwarte Format wie: 02. Juli 2025
+        $months = [
+            'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04',
+            'Mai' => '05', 'Juni' => '06', 'Juli' => '07', 'August' => '08',
+            'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
         ];
 
-        if (preg_match('/(\d{1,2})\.\s*([äöüÄÖÜa-zA-Z]+)\s+(\d{4})/', $text, $matches)) {
-            $tag = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-            $monatName = $matches[2];
-            $jahr = $matches[3];
-
-            $monat = $monate[$monatName] ?? null;
-            if ($monat) {
-                return "$jahr-$monat-$tag 00:00:00";
+        if (preg_match('/(\d{1,2})\. (\p{L}+) (\d{4})/u', $text, $matches)) {
+            $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $month = $months[$matches[2]] ?? null;
+            $year = $matches[3];
+            if ($month) {
+                return "$year-$month-$day 00:00:00";
             }
         }
 
