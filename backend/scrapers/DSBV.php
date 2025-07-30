@@ -34,7 +34,7 @@ class DSBV {
         $results = [];
         foreach ($articles as $article) {
             $titleNode = $xpath->query('.//header/h1', $article)->item(0);
-            $dateNode = $xpath->query('.//section//p[1]')->item(0); // weniger restriktiv
+            $dateNode = $xpath->query('.//section//p[1]', $article)->item(0); // korrekter kontext
 
             if (!$titleNode || !$dateNode) {
                 echo "Titel oder Datum fehlt – Artikel wird übersprungen.\n";
@@ -75,7 +75,7 @@ class DSBV {
     }
 
     private function extractDateFromText($text) {
-        $text = str_replace(['&nbsp;', ' '], ' ', $text); // normale & geschützte Leerzeichen
+        $text = str_replace(['&nbsp;', ' '], ' ', $text); // geschützte Leerzeichen ersetzen
         $text = trim($text);
 
         if (preg_match('/(\d{1,2})\.?\s*([a-zäöüA-ZÄÖÜ]+)\s+(\d{4})/u', $text, $matches)) {
