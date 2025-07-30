@@ -59,7 +59,7 @@ class Automatenwirtschaft {
                     continue;
                 }
 
-                $limitDate = new DateTime('-6 weeks');
+                $limitDate = new DateTime('-20 weeks');
                 if ($dateTime < $limitDate) {
                     echo "Übersprungen (zu alt): {$dateStr}\n";
                     continue;
