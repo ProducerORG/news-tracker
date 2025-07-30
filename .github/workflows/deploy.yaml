@@ -27,7 +27,9 @@ jobs:
       - name: Create .env on server (Backend)
         run: |
           mkdir -p ./backend/config
-          echo "${{ secrets.ENV_CONTENTS }}" > ./backend/config/.env
+          cat <<EOF > ./backend/config/.env
+      ${{ secrets.ENV_CONTENTS }}
+      EOF
 
       - name: Upload Backend Config via FTP (Clean)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
