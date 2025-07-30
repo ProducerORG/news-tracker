@@ -76,10 +76,28 @@ class GGL {
     }
 
     private function parseGermanDate($text) {
-        if (preg_match('/(\d{2})\.\s?(\d{2})\.\s?(\d{4})/', $text, $matches)) {
-            $date = DateTime::createFromFormat('d.m.Y', "$matches[1].$matches[2].$matches[3]");
-            return $date ? $date->format('Y-m-d') . ' 00:00:00' : null;
+        // Entferne Leerzeichen und normalize
+        $text = trim($text);
+
+        // Erwarte Format: z.B. 02. Juli 2025
+        $monate = [
+            'Januar' => '01', 'Februar' => '02', 'März' => '03',
+            'April' => '04', 'Mai' => '05', 'Juni' => '06',
+            'Juli' => '07', 'August' => '08', 'September' => '09',
+            'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
+        ];
+
+        if (preg_match('/(\d{1,2})\.\s*([äöüÄÖÜa-zA-Z]+)\s+(\d{4})/', $text, $matches)) {
+            $tag = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $monatName = $matches[2];
+            $jahr = $matches[3];
+
+            $monat = $monate[$monatName] ?? null;
+            if ($monat) {
+                return "$jahr-$monat-$tag 00:00:00";
+            }
         }
+
         return null;
     }
 
