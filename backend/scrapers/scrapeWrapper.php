@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../frontend/public/api.php';
+require_once __DIR__ . '/../config/config.php';
 
 $start = microtime(true);
 
