@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../../frontend/public/api.php';
 use GuzzleHttp\Client;
 
