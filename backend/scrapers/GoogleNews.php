@@ -8,9 +8,6 @@ class GoogleNews {
     public function fetch() {
         require_once __DIR__ . '/../config/config.php';
 
-        echo "TEST: LOGIN=" . (defined('DATAFORSEO_LOGIN') ? DATAFORSEO_LOGIN : 'NICHT DEFINIERT') . "\n";
-        echo "TEST: PASSWORD=" . (defined('DATAFORSEO_PASSWORD') ? '[GESETZT]' : 'NICHT DEFINIERT') . "\n";
-        echo "TEST: KEYWORDS=" . (defined('SEARCH_KEYWORDS') ? SEARCH_KEYWORDS : 'NICHT DEFINIERT') . "\n";
         $sourceName = 'GoogleNews';
         $source = $this->fetchSourceByName($sourceName);
 
@@ -21,7 +18,7 @@ class GoogleNews {
 
         $login = defined('DATAFORSEO_LOGIN') ? DATAFORSEO_LOGIN : null;
         $password = defined('DATAFORSEO_PASSWORD') ? DATAFORSEO_PASSWORD : null;
-        $keywordsRaw = defined('SEARCH_KEYWORDS') ? SEARCH_KEYWORDS : null;
+        $keywordsRaw = "Glücksspiel|Sportwetten|Automatenspiel";
 
         if (!$login || !$password || !$keywordsRaw) {
             echo "Fehlende Umgebungsvariablen. Abbruch.\n";
