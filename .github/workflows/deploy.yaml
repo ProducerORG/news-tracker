@@ -29,7 +29,7 @@ jobs:
           mkdir -p ./backend/config
           cat <<EOF > ./backend/config/.env
       ${{ secrets.ENV_CONTENTS }}
-      EOF
+EOF
 
       - name: Upload Backend Config via FTP (Clean)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
