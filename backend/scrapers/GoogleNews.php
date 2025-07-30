@@ -5,6 +5,11 @@ use GuzzleHttp\Client;
 
 class GoogleNews {
     public function fetch() {
+        require_once __DIR__ . '/../config/config.php';
+
+        echo "TEST: LOGIN=" . (defined('DATAFORSEO_LOGIN') ? DATAFORSEO_LOGIN : 'NICHT DEFINIERT') . "\n";
+        echo "TEST: PASSWORD=" . (defined('DATAFORSEO_PASSWORD') ? '[GESETZT]' : 'NICHT DEFINIERT') . "\n";
+        echo "TEST: KEYWORDS=" . (defined('SEARCH_KEYWORDS') ? SEARCH_KEYWORDS : 'NICHT DEFINIERT') . "\n";
         $sourceName = 'GoogleNews';
         $source = $this->fetchSourceByName($sourceName);
 
