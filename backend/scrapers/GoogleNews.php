@@ -12,9 +12,9 @@ class GoogleNews {
             return [];
         }
 
-        $login = DATAFORSEO_LOGIN;
-        $password = DATAFORSEO_PASSWORD;
-        $keywordsRaw = SEARCH_KEYWORDS;
+        $login = defined('DATAFORSEO_LOGIN') ? DATAFORSEO_LOGIN : null;
+        $password = defined('DATAFORSEO_PASSWORD') ? DATAFORSEO_PASSWORD : null;
+        $keywordsRaw = defined('SEARCH_KEYWORDS') ? SEARCH_KEYWORDS : null;
 
         if (!$login || !$password || !$keywordsRaw) {
             echo "Fehlende Umgebungsvariablen. Abbruch.\n";
