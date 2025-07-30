@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../../frontend/public/api.php';
 require_once __DIR__ . '/../vendor/autoload.php';
+
 use GuzzleHttp\Client;
 
 class GoogleNews {
@@ -31,17 +32,11 @@ class GoogleNews {
         ]);
 
         $results = [];
-        $totalLimit = 15;
-        $collected = 0;
+        $maxPerKeyword = 5;
 
         foreach ($keywordList as $keyword) {
             $keyword = trim($keyword);
             echo "Suche nach Keyword: {$keyword}\n";
-
-            if ($collected >= $totalLimit) {
-                echo "Limit erreicht, restliche Keywords werden übersprungen.\n";
-                break;
-            }
 
             $postData = [[
                 "language_code" => "de",
@@ -62,9 +57,10 @@ class GoogleNews {
                 }
 
                 $items = $body['tasks'][0]['result'][0]['items'] ?? [];
+                $perKeywordCollected = 0;
 
                 foreach ($items as $item) {
-                    if ($collected >= $totalLimit) break;
+                    if ($perKeywordCollected >= $maxPerKeyword) break;
 
                     $title = trim($item['title'] ?? '');
                     $link = trim($item['url'] ?? '');
@@ -85,10 +81,10 @@ class GoogleNews {
                         'link' => $link
                     ];
 
-                    $collected++;
+                    $perKeywordCollected++;
                 }
 
-                echo "Gefundene Artikel bisher: $collected\n";
+                echo "Gespeichert für '{$keyword}': {$perKeywordCollected} Artikel\n";
 
             } catch (\Exception $e) {
                 echo "Fehler bei Keyword '$keyword': " . $e->getMessage() . "\n";
