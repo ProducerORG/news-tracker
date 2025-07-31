@@ -44,7 +44,7 @@ class DGGS {
                 $titleNode = $xpath->query('.//a//span[@class="sr-only"]', $card)->item(0);
                 $dateNodes = $xpath->query('.//div[contains(@class,"text-muted")]', $card);
 
-                if (!$linkNode || !$titleNode || $dateNodes->length < 1) {
+                if (!$linkNode || !$titleNode) {
                     continue;
                 }
 
@@ -52,8 +52,15 @@ class DGGS {
                 $href = $linkNode->getAttribute('href');
                 $link = (strpos($href, 'http') === 0) ? $href : 'https://www.dggs.de' . $href;
 
-                $dateText = trim($dateNodes->item($dateNodes->length - 1)->textContent);
-                $articleDate = $this->parseGermanDate($dateText);
+                $articleDate = null;
+                if ($dateNodes->length >= 1) {
+                    $dateText = trim($dateNodes->item($dateNodes->length - 1)->textContent);
+                    $articleDate = $this->parseGermanDate($dateText);
+                }
+
+                if (!$articleDate) {
+                    $articleDate = $this->fetchArticleDate($link);
+                }
 
                 if (!$articleDate) {
                     echo "Kein Datum gefunden für: $link, wird übersprungen.\n";
@@ -93,13 +100,43 @@ class DGGS {
             'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
         ];
 
-        if (preg_match('/\b(\d{1,2})\.\s*(\w+)\s+(\d{4})/', $text, $m)) {
+        if (preg_match('/(\d{1,2})\.\s?(\w+)\s+(\d{4})/', $text, $m)) {
             $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
             $month = $months[$m[2]] ?? null;
             $year = $m[3];
             if ($month) {
                 return "$year-$month-$day 00:00:00";
             }
+        }
+
+        return null;
+    }
+
+    private function fetchArticleDate($link) {
+        $html = @file_get_contents($link);
+        if (!$html) {
+            echo "Artikel nicht erreichbar: $link\n";
+            return null;
+        }
+
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+
+        // Versuch 1: meta property="article:published_time"
+        $metaNode = $xpath->query('//meta[@property="article:published_time"]')->item(0);
+        if ($metaNode) {
+            $content = trim($metaNode->getAttribute('content'));
+            if (preg_match('/\d{4}-\d{2}-\d{2}/', $content)) {
+                return substr($content, 0, 10) . ' 00:00:00';
+            }
+        }
+
+        // Versuch 2: sichtbares Datum <time>
+        $timeNode = $xpath->query('//time')->item(0);
+        if ($timeNode) {
+            $text = trim($timeNode->textContent);
+            return $this->parseGermanDate($text);
         }
 
         return null;
