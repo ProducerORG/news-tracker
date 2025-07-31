@@ -42,9 +42,9 @@ class DGGS {
             foreach ($cards as $card) {
                 $linkNode = $xpath->query('.//a[contains(@href,"/news/")]', $card)->item(0);
                 $titleNode = $xpath->query('.//a//span[@class="sr-only"]', $card)->item(0);
-                $dateNode = $xpath->query('.//div[contains(@class,"text-muted") and contains(text(),",")]', $card)->item(0);
+                $dateNodes = $xpath->query('.//div[contains(@class,"text-muted")]', $card);
 
-                if (!$linkNode || !$titleNode || !$dateNode) {
+                if (!$linkNode || !$titleNode || $dateNodes->length < 1) {
                     continue;
                 }
 
@@ -52,7 +52,9 @@ class DGGS {
                 $href = $linkNode->getAttribute('href');
                 $link = (strpos($href, 'http') === 0) ? $href : 'https://www.dggs.de' . $href;
 
-                $articleDate = $this->parseGermanDate(trim($dateNode->textContent));
+                $dateText = trim($dateNodes->item($dateNodes->length - 1)->textContent);
+                $articleDate = $this->parseGermanDate($dateText);
+
                 if (!$articleDate) {
                     echo "Kein Datum gefunden für: $link, wird übersprungen.\n";
                     continue;
@@ -85,37 +87,21 @@ class DGGS {
     }
 
     private function parseGermanDate($text) {
-        // Erwartet: Montag, 28. Juli 2025
-        $replaced = strtr($text, [
+        $months = [
             'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04',
             'Mai' => '05', 'Juni' => '06', 'Juli' => '07', 'August' => '08',
             'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
-        ]);
-        if (preg_match('/\d{1,2}\.?\s(\d{2})\s(\d{4})/', $replaced)) {
-            return null;
-        }
-        if (preg_match('/(\d{1,2})\.\s?(\d{2})\.\s?(\d{4})/', $replaced, $m)) {
-            return "{$m[3]}-{$m[2]}-{$m[1]} 00:00:00";
-        }
-        if (preg_match('/(\d{1,2})\.?\s?(\d{2})\s(\d{4})/', $replaced, $m)) {
-            return "{$m[3]}-{$m[2]}-{$m[1]} 00:00:00";
-        }
-        if (preg_match('/(\d{1,2})\.\s?(\d{2})\.(\d{4})/', $replaced, $m)) {
-            return "{$m[3]}-{$m[2]}-{$m[1]} 00:00:00";
-        }
-        if (preg_match('/(\d{1,2})\.\s?(\w+)\s?(\d{4})/', $text, $m)) {
-            $monthMap = [
-                'Januar' => '01', 'Februar' => '02', 'März' => '03', 'April' => '04',
-                'Mai' => '05', 'Juni' => '06', 'Juli' => '07', 'August' => '08',
-                'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
-            ];
+        ];
+
+        if (preg_match('/\b(\d{1,2})\.\s*(\w+)\s+(\d{4})/', $text, $m)) {
             $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
-            $month = $monthMap[$m[2]] ?? null;
+            $month = $months[$m[2]] ?? null;
             $year = $m[3];
             if ($month) {
                 return "$year-$month-$day 00:00:00";
             }
         }
+
         return null;
     }
 
