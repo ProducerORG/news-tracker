@@ -41,8 +41,11 @@ class GoogleNews {
             $postData = [[
                 "language_code" => "de",
                 "location_code" => 2276,
+                "se_domain" => "google.de",
                 "keyword" => $keyword,
-                "calculate_rectangles" => true
+                "search_mode" => "as_is",
+                "device" => "desktop",
+                "calculate_rectangles" => false
             ]];
 
             try {
