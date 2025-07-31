@@ -127,6 +127,9 @@ class DGGS {
     }
 
     private function existsPost($title, $link) {
+        // Erzwungene Normalisierung der Domain
+        $link = str_replace('https://www.dggs.de', 'https://www.dggs-online.de', $link);
+
         $queryTitle = 'posts?select=id&title=eq.' . urlencode($title);
         $queryLink = 'posts?select=id&link=eq.' . urlencode($link);
 
@@ -142,6 +145,7 @@ class DGGS {
 
         return false;
     }
+
 
     private function insertPost($date, $sourceId, $title, $link) {
         $data = [
