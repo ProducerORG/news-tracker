@@ -106,7 +106,7 @@ function rewriteWithGPT(string $text): string {
     $payload = [
         'model' => 'gpt-4',
         'messages' => [
-            ['role' => 'system', 'content' => 'Formuliere den folgenden Artikeltext journalistisch um. Keine Wiederholungen, keine Quellen. Verwende eine kurzes, ansprechendes, passendes Intro. Falls der Artikel fremdsprachig ist, übersetze ihn ins Deutsche'],
+            ['role' => 'system', 'content' => 'Formuliere den folgenden Artikel journalistisch um. Verwende einen sachlichen, informativen Ton. Vermeide Marketing-Sprache, Übertreibungen und Wiederholungen. Beginne mit einem prägnanten Einleitungssatz, der das Thema klar zusammenfasst. Streiche irrelevante Passagen. Wenn der Originaltext in einer Fremdsprache ist, übersetze ihn ins Deutsche. Nenne ganz am Ende kurz die Quelle im Format "Quelle: automatenwirtschaft.de". Schreibe in klarem, modernem Deutsch. Zielgruppe sind Fachleute aus der Branche.'],
             ['role' => 'user', 'content' => $text]
         ],
         'temperature' => 0.7
