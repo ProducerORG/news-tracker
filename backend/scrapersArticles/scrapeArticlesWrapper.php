@@ -94,6 +94,13 @@ try {
             'url' => $url,
             'reason' => 'Artikeltext zu kurz oder leer'
         ]);
+    } elseif (str_contains($message, 'GPT API-Fehler: HTTP 400')) {
+        http_response_code(200);
+        echo json_encode([
+            'manualRequired' => true,
+            'url' => $url,
+            'reason' => 'Artikeltext zu lang (über ~12.000 Wörter)'
+        ]);
     } else {
         http_response_code(500);
         echo json_encode(['error' => $message]);
