@@ -16,7 +16,6 @@ $url = $input['url'] ?? null;
 $source = $input['source'] ?? null;
 $manualText = $input['manualText'] ?? null;
 
-
 if (!$url) {
     http_response_code(400);
     echo json_encode(['error' => 'URL erforderlich']);
@@ -65,6 +64,7 @@ if (!$manualText) {
 
 try {
     $manualText = $input['manualText'] ?? null;
+    $infoMessage = null;
 
     if ($manualText && strlen(trim($manualText)) >= 100) {
         $articleText = trim($manualText);
@@ -73,7 +73,15 @@ try {
         if (!$rawText || strlen(trim($rawText)) < 100) {
             throw new Exception("Artikeltext zu kurz oder leer.");
         }
-        $articleText = trim($rawText);
+
+        $rawText = trim($rawText);
+
+        if (strlen($rawText) > 10000) {
+            $rawText = substr($rawText, 0, 10000);
+            $infoMessage = "Hinweis: Artikeltext war zu lang (über 10.000 Zeichen) und wurde abgeschnitten";
+        }
+
+        $articleText = $rawText;
     }
 
     // GPT-Umschreibung
@@ -83,7 +91,12 @@ try {
     storeInSupabase($url, $articleText);
 
     ob_clean();
-    echo json_encode(['text' => $rewritten]);
+    $response = ['text' => $rewritten];
+    if ($infoMessage) {
+        $response['info'] = $infoMessage;
+    }
+    echo json_encode($response);
+
 } catch (Exception $e) {
     $message = $e->getMessage();
     error_log("Fehler in Wrapper: " . $message);
@@ -99,7 +112,7 @@ try {
         echo json_encode([
             'manualRequired' => true,
             'url' => $url,
-            'reason' => 'Artikeltext zu lang (über ~12.000 Wörter)'
+            'reason' => 'Fehler: Artikeltext zu lang oder fehlerhaft.'
         ]);
     } else {
         http_response_code(500);
