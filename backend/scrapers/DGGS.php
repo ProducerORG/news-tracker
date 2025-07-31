@@ -12,6 +12,7 @@ class DGGS {
         }
 
         $baseUrl = rtrim($source['url'], '/');
+        $baseDomain = 'https://www.dggs-online.de';
         echo "Verwende URL aus DB: {$baseUrl}\n";
 
         $results = [];
@@ -51,7 +52,7 @@ class DGGS {
 
                 $title = trim($titleNode->textContent);
                 $href = $linkNode->getAttribute('href');
-                $link = (strpos($href, 'http') === 0) ? $href : rtrim($baseUrl, '/news') . $href;
+                $link = (strpos($href, 'http') === 0) ? $href : $baseDomain . $href;
 
                 $dateText = trim($dateNodes->item($dateNodes->length - 1)->textContent);
                 $articleDate = $this->parseGermanDate($dateText);
@@ -93,6 +94,9 @@ class DGGS {
             'Mai' => '05', 'Juni' => '06', 'Juli' => '07', 'August' => '08',
             'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
         ];
+
+        // Entferne optionalen Wochentag z. B. "Montag, "
+        $text = preg_replace('/^\s*\w+,\s*/u', '', $text);
 
         if (preg_match('/(\d{1,2})\.\s?(\w+)\s+(\d{4})/', $text, $m)) {
             $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
