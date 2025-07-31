@@ -8,8 +8,8 @@ function scrapeArticle(string $url): string {
     @$dom->loadHTML($html);
     $xpath = new DOMXPath($dom);
 
-    // Der eigentliche Artikeltext liegt im div mit class="prose"
-    $contentNode = $xpath->query('//article//div[contains(@class, "prose")]')->item(0);
+    // Hauptinhalt liegt im div mit class="prose"
+    $contentNode = $xpath->query('//div[contains(@class, "prose")]')->item(0);
     if (!$contentNode) return '';
 
     // Entferne irrelevante Tags
