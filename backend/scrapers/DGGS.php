@@ -20,7 +20,7 @@ class DGGS {
         $maxPages = 10;
 
         while ($page <= $maxPages) {
-            $url = $baseUrl . '?page=' . $page;
+            $url = $baseUrl . ($page === 1 ? '' : '/p/' . $page);
             echo "Lade Seite: $url\n";
 
             $html = @file_get_contents($url);
