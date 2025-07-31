@@ -43,9 +43,17 @@ class DGGS {
             foreach ($cards as $card) {
                 $linkNode = $xpath->query('.//a[contains(@href,"/news/")]', $card)->item(0);
                 $titleNode = $xpath->query('.//a//span[@class="sr-only"]', $card)->item(0);
-                $dateNodes = $xpath->query('.//div[contains(@class,"text-muted")]', $card);
 
-                if (!$linkNode || !$titleNode || $dateNodes->length < 2) {
+                // Robustere Datumserkennung: nur Textknoten ohne Unterelemente
+                $dateNode = null;
+                foreach ($xpath->query('.//div[contains(@class,"text-muted")]', $card) as $node) {
+                    if ($node->childNodes->length === 1 && $node->firstChild->nodeType === XML_TEXT_NODE) {
+                        $dateNode = $node;
+                        break;
+                    }
+                }
+
+                if (!$linkNode || !$titleNode || !$dateNode) {
                     echo "Unvollständige Daten – wird übersprungen.\n";
                     continue;
                 }
@@ -54,7 +62,7 @@ class DGGS {
                 $href = $linkNode->getAttribute('href');
                 $link = (strpos($href, 'http') === 0) ? $href : $baseDomain . $href;
 
-                $dateText = trim($dateNodes->item($dateNodes->length - 1)->textContent);
+                $dateText = trim($dateNode->textContent);
                 $articleDate = $this->parseGermanDate($dateText);
 
                 if (!$articleDate) {
@@ -95,7 +103,7 @@ class DGGS {
             'September' => '09', 'Oktober' => '10', 'November' => '11', 'Dezember' => '12'
         ];
 
-        // Entferne optionalen Wochentag z. B. "Montag, "
+        // Entferne optionalen Wochentag (z. B. "Montag, ")
         $text = preg_replace('/^\s*\w+,\s*/u', '', $text);
 
         if (preg_match('/(\d{1,2})\.\s?(\w+)\s+(\d{4})/', $text, $m)) {
