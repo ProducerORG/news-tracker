@@ -50,7 +50,7 @@ class UniHohenheim {
             }
 
             // Nur Artikel der letzten 6 Wochen
-            $limitDate = new DateTime('-6 weeks');
+            $limitDate = new DateTime('-30 weeks');
             if ($dateTime < $limitDate) {
                 echo "Übersprungen (zu alt): {$dateTime->format('Y-m-d')}\n";
                 continue;
