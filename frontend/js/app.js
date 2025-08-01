@@ -514,7 +514,7 @@ function renderRewriteCell(post) {
     const hasScraper = supportedArticleSources.has(sourceName);
 
     if (!rewritten && hasScraper) {
-        return `<button id="rewrite-btn-${post.id}" class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick="triggerRewrite('${post.id}', '${encodeURIComponent(post.link)}', '${encodeURIComponent(sourceName || '')}')">Umschreiben</button>`;
+        return `<button id="rewrite-btn-${post.id}" class='bg-[var(--gold)] hover:bg-yellow-700 text-white rounded px-2 py-1 text-xs' onclick='triggerRewrite(${JSON.stringify(post)})'">Umschreiben</button>`;
     } else if (rewritten) {
         const short = rewritten.length > 15 ? rewritten.substring(0, 15) + '…' : rewritten;
         return `<div class='rewrite-cell cursor-pointer text-sm text-gray-800 max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis border p-1 rounded' 
@@ -610,11 +610,12 @@ function openManualArticleInput(postId, url) {
     document.body.appendChild(overlay);
 }
 
-async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
-    const link = decodeURIComponent(linkEncoded);
-    const source = decodeURIComponent(sourceEncoded);
-    const button = document.getElementById(`rewrite-btn-${postId}`);
-    
+async function triggerRewrite(post) {
+    const link = post.link;
+    const source = post.source?.name || '';
+    const nameText = post.source?.nametext || post.source?.name || source;
+
+    const button = document.getElementById(`rewrite-btn-${post.id}`);
     if (button) {
         button.disabled = true;
         button.innerHTML = `<svg class="animate-spin h-4 w-4 mx-auto text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -626,7 +627,7 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
         const res = await fetch(`/public/api.php?action=rewrite-article`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: link, source: source, nametext: post.source?.nametext })
+            body: JSON.stringify({ url: link, source: source, nametext: nameText })
         });
         if (!res.ok) {
             const text = await res.text();
@@ -634,14 +635,14 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
         }
         const data = await res.json();
         if (data && data.text) {
-            await fetch(`/public/api.php?action=update-rewritten&id=${postId}`, {
+            await fetch(`/public/api.php?action=update-rewritten&id=${post.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rewrittentext: data.text })
             });
             loadPosts(false);
         } else if (data.manualRequired && data.url) {
-            openManualArticleInput(postId, decodeURIComponent(data.url));
+            openManualArticleInput(post.id, decodeURIComponent(data.url));
         } else {
             throw new Error('Kein Text erhalten');
         }
