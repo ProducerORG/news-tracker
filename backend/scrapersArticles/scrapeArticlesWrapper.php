@@ -15,6 +15,7 @@ $input = json_decode($rawInput, true);
 $url = $input['url'] ?? null;
 $source = $input['source'] ?? null;
 $manualText = $input['manualText'] ?? null;
+$nameTextInput = $input['nametext'] ?? null;
 
 if (!$url) {
     http_response_code(400);
@@ -84,8 +85,11 @@ try {
         $articleText = $rawText;
     }
 
+    // Bevorzugt übergebenen nametext verwenden
+    $nameText = $nameTextInput ?: $source;
+
     // GPT-Umschreibung
-    $rewritten = rewriteWithGPT($articleText);
+    $rewritten = rewriteWithGPT($articleText, $nameText);
 
     // In Supabase speichern
     storeInSupabase($url, $articleText);
@@ -122,11 +126,13 @@ try {
 }
 
 // GPT-Funktion
-function rewriteWithGPT(string $text): string {
+function rewriteWithGPT(string $text, string $sourceLabel): string {
+    $promptSystem = "Formuliere den folgenden Artikel journalistisch um. Verwende einen sachlichen, informativen Ton. Vermeide Marketing-Sprache, Übertreibungen und Wiederholungen. Vermeide das wörtliche Übernehmen ganzer Passagen. Beginne mit einem prägnanten Einleitungssatz, der das Thema klar zusammenfasst. Streiche irrelevante Passagen. Wenn der Originaltext in einer Fremdsprache ist, übersetze ihn ins Deutsche. Schreibe in klarem, modernem Deutsch. Zielgruppe sind Personen, die sich aus beruflichen Gründen mit dem Thema Glücksspiel beschäftigen. Falls im gesamten Artikel keine Quelle oder Herkunftsangabe enthalten ist, füge in einem der ersten Sätze des umformulierten Textes eine passende Formulierung wie 'Laut [Quelle]', 'Gemäß einem Bericht von [Quelle]' oder 'Wie [Quelle] berichtet' ein. Die Quelle ist: {$sourceLabel}";
+
     $payload = [
         'model' => 'gpt-4',
         'messages' => [
-            ['role' => 'system', 'content' => 'Formuliere den folgenden Artikel journalistisch um. Verwende einen sachlichen, informativen Ton. Vermeide Marketing-Sprache, Übertreibungen und Wiederholungen. Beginne mit einem prägnanten Einleitungssatz, der das Thema klar zusammenfasst. Streiche irrelevante Passagen. Wenn der Originaltext in einer Fremdsprache ist, übersetze ihn ins Deutsche. Schreibe in klarem, modernem Deutsch. Zielgruppe sind Fachleute aus der Branche.'],
+            ['role' => 'system', 'content' => $promptSystem],
             ['role' => 'user', 'content' => $text]
         ],
         'temperature' => 0.7
