@@ -84,10 +84,19 @@ class CasinoOrg {
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0',
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_TIMEOUT => 15,
+            CURLOPT_COOKIEFILE => '',
+            CURLOPT_COOKIEJAR => '/tmp/casinoorg_cookies.txt',
+            CURLOPT_HTTPHEADER => [
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Connection: keep-alive',
+                'Referer: https://www.google.com/',
+                'Cache-Control: max-age=0',
+            ],
         ]);
         $result = curl_exec($ch);
         if (curl_errno($ch)) {
