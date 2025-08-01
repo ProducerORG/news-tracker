@@ -626,7 +626,7 @@ async function triggerRewrite(postId, linkEncoded, sourceEncoded) {
         const res = await fetch(`/public/api.php?action=rewrite-article`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: link, source: source })
+            body: JSON.stringify({ url: link, source: source, nametext: post.source?.nametext })
         });
         if (!res.ok) {
             const text = await res.text();
