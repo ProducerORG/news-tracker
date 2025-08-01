@@ -19,9 +19,9 @@ class CasinoOrg {
         $maxPages = 10;
 
         while ($page <= $maxPages) {
-            $url = $page === 1 ? $baseUrl : $baseUrl . '/page/' . $page . '/';
+            $url = $page === 1 ? $baseUrl . '/' : $baseUrl . '/page/' . $page . '/';
             echo "Lade Seite: $url\n";
-            $html = @file_get_contents($url);
+            $html = $this->curlGet($url);
             if (!$html) {
                 echo "Seite $url nicht erreichbar. Beende.\n";
                 break;
@@ -77,6 +77,30 @@ class CasinoOrg {
         }
 
         return $results;
+    }
+
+    private function curlGet($url) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_TIMEOUT => 15,
+        ]);
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo "cURL-Fehler bei $url: " . curl_error($ch) . "\n";
+            return false;
+        }
+        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($statusCode >= 400) {
+            echo "HTTP-Fehler $statusCode bei $url\n";
+            return false;
+        }
+        return $result;
     }
 
     private function fetchSourceByName($name) {
