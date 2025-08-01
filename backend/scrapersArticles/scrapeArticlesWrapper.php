@@ -86,7 +86,7 @@ try {
     }
 
     // Bevorzugt übergebenen nametext verwenden
-    $nameText = $nameTextInput ?: $source;
+    $nameText = (isset($nameTextInput) && trim($nameTextInput) !== '') ? $nameTextInput : $source;
 
     // GPT-Umschreibung
     $rewritten = rewriteWithGPT($articleText, $nameText);
