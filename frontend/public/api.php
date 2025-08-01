@@ -37,7 +37,7 @@ if ($action === 'rewrite-article') {
 }
 
 if ($requestMethod === 'GET' && $action === 'posts') {
-    echo supabaseRequest('GET', 'posts?select=*,source:sources(name,nametext)&deleted=eq.false&limit=2000');
+    echo supabaseRequest('GET', 'posts?select=*,source:sources(*)&deleted=eq.false&limit=2000');
     exit;
 }
 
@@ -88,7 +88,7 @@ if ($requestMethod === 'POST' && $action === 'restore' && isset($_GET['id'])) {
 }
 
 if ($requestMethod === 'GET' && $action === 'posts-trash') {
-    echo supabaseRequest('GET', 'posts?select=*,source:sources(name,nametext)&deleted=eq.true&limit=2000');
+    echo supabaseRequest('GET', 'posts?select=*,source:sources(*)&deleted=eq.true&limit=2000');
     exit;
 }
 
