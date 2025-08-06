@@ -39,7 +39,7 @@ class GoogleNews {
             $params = [
                 'q' => $keyword,
                 'tbm' => 'nws', // Nur Nachrichten suchen
-                'api_key' => $this->apiKey, 
+                'api_key' => $this->apiKey,  // API-Schlüssel wird hier übergeben
                 'hl' => 'de', // Deutsch als Sprache
                 'tbs' => 'qdr:d', // Artikel der letzten 14 Tage
             ];
@@ -67,12 +67,20 @@ class GoogleNews {
                     $dateRaw = $item['date'] ?? null;
 
                     if (!$title || !$link) continue;
-                    
-                    // Wenn kein gültiges Datum vorhanden ist, aktuellen Zeitpunkt verwenden
+
+                    // Wenn das Datum fehlt oder ungültig ist (1970-01-01 00:00:00), dann das aktuelle Datum verwenden
                     if (empty($dateRaw) || $dateRaw === '1970-01-01 00:00:00') {
                         $dateTime = date('Y-m-d H:i:s');  // Aktuelles Datum und Uhrzeit verwenden
                     } else {
-                        $dateTime = date('Y-m-d H:i:s', strtotime($dateRaw)); // Andernfalls das angegebene Datum verwenden
+                        // Datum verarbeiten und prüfen, ob es vor 2010 liegt
+                        $dateTimeObj = new DateTime($dateRaw);
+
+                        // Wenn das Datum vor 2010 liegt, ersetze es durch das aktuelle Datum
+                        if ($dateTimeObj->format('Y') < 2010) {
+                            $dateTime = date('Y-m-d H:i:s');  // Aktuelles Datum verwenden
+                        } else {
+                            $dateTime = $dateTimeObj->format('Y-m-d H:i:s');  // Ansonsten das ursprüngliche Datum verwenden
+                        }
                     }
 
                     if ($this->existsPost($title, $link)) {
