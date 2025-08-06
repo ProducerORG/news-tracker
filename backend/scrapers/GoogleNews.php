@@ -9,7 +9,7 @@ class GoogleNews {
     private $apiKey;
 
     public function __construct() {
-        $this->apiKey = SERPAPI_KEY;  
+        $this->apiKey = SERPAPI_KEY;  // API-Schlüssel aus der Konstante laden
     }
 
     public function fetch() {
@@ -39,7 +39,7 @@ class GoogleNews {
             $params = [
                 'q' => $keyword,
                 'tbm' => 'nws', // Nur Nachrichten suchen
-                'api_key' => $this->apiKey,
+                'api_key' => $this->apiKey, 
                 'hl' => 'de', // Deutsch als Sprache
                 'tbs' => 'qdr:d', // Artikel der letzten 14 Tage
             ];
@@ -67,12 +67,19 @@ class GoogleNews {
                     $dateRaw = $item['date'] ?? null;
 
                     if (!$title || !$link) continue;
+                    
+                    // Wenn kein gültiges Datum vorhanden ist, aktuellen Zeitpunkt verwenden
+                    if (empty($dateRaw) || $dateRaw === '1970-01-01 00:00:00') {
+                        $dateTime = date('Y-m-d H:i:s');  // Aktuelles Datum und Uhrzeit verwenden
+                    } else {
+                        $dateTime = date('Y-m-d H:i:s', strtotime($dateRaw)); // Andernfalls das angegebene Datum verwenden
+                    }
+
                     if ($this->existsPost($title, $link)) {
                         echo "Übersprungen (bereits vorhanden): $title\n";
                         continue;
                     }
 
-                    $dateTime = date('Y-m-d H:i:s', strtotime($dateRaw));
                     $this->insertPost($dateTime, $source['id'], $title, $link);
 
                     $results[] = [
