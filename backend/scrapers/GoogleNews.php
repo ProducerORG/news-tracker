@@ -72,14 +72,12 @@ class GoogleNews {
                     if (empty($dateRaw) || $dateRaw === '1970-01-01 00:00:00') {
                         $dateTime = date('Y-m-d H:i:s');  // Aktuelles Datum und Uhrzeit verwenden
                     } else {
-                        // Datum verarbeiten und prüfen, ob es vor 2010 liegt
-                        $dateTimeObj = new DateTime($dateRaw);
-
-                        // Wenn das Datum vor 2010 liegt, ersetze es durch das aktuelle Datum
-                        if ($dateTimeObj->format('Y') < 2010) {
-                            $dateTime = date('Y-m-d H:i:s');  // Aktuelles Datum verwenden
-                        } else {
-                            $dateTime = $dateTimeObj->format('Y-m-d H:i:s');  // Ansonsten das ursprüngliche Datum verwenden
+                        // Versuche, die Zeitangabe zu parsen (vor X Stunden, Tagen, etc.)
+                        try {
+                            $dateTime = $this->parseDate($dateRaw);
+                        } catch (\Exception $e) {
+                            // Falls das Parsen fehlschlägt, das aktuelle Datum verwenden
+                            $dateTime = date('Y-m-d H:i:s');
                         }
                     }
 
@@ -139,5 +137,30 @@ class GoogleNews {
         ];
         $response = supabaseRequest('POST', 'posts', $data);
         echo "Gespeichert: $title ($link)\n";
+    }
+
+    // Diese Methode konvertiert relative Zeitangaben wie 'vor 7 Stunden' oder 'vor 4 Tagen'
+    private function parseDate($dateRaw) {
+        $currentDate = new DateTime(); // Das aktuelle Datum
+
+        // Wir überprüfen, ob die Zeitangabe wie "vor X Stunden" oder "vor X Tagen" aussieht
+        if (preg_match('/vor (\d+) Stunden?/', $dateRaw, $matches)) {
+            $hoursAgo = (int)$matches[1];
+            $currentDate->modify("-{$hoursAgo} hours");
+        } elseif (preg_match('/vor (\d+) Tagen?/', $dateRaw, $matches)) {
+            $daysAgo = (int)$matches[1];
+            $currentDate->modify("-{$daysAgo} days");
+        } else {
+            // Falls eine andere Zeitangabe kommt, versuche sie zu parsen
+            try {
+                $currentDate = new DateTime($dateRaw); // z.B. '2025-08-01 12:30:00'
+            } catch (\Exception $e) {
+                // Falls das Datum nicht korrekt ist, benutze das aktuelle Datum
+                $currentDate = new DateTime();
+            }
+        }
+
+        // Gib das Datum im Format Y-m-d H:i:s zurück
+        return $currentDate->format('Y-m-d H:i:s');
     }
 }
