@@ -14,3 +14,4 @@ define('GPT_KEY', $dotenv['GPT_KEY']);
 
 define('DATAFORSEO_LOGIN', $dotenv['DATAFORSEO_LOGIN']);
 define('DATAFORSEO_PASSWORD', $dotenv['DATAFORSEO_PASSWORD']);
+define('SERPAPI_KEY', $dotenv['SERPAPI_KEY']);

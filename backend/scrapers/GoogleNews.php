@@ -6,6 +6,12 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use GuzzleHttp\Client;
 
 class GoogleNews {
+    private $apiKey;
+
+    public function __construct() {
+        $this->apiKey = SERPAPI_KEY;  
+    }
+
     public function fetch() {
         $sourceName = 'GoogleNews';
         $source = $this->fetchSourceByName($sourceName);
@@ -15,19 +21,10 @@ class GoogleNews {
             return [];
         }
 
-        $login = defined('DATAFORSEO_LOGIN') ? DATAFORSEO_LOGIN : null;
-        $password = defined('DATAFORSEO_PASSWORD') ? DATAFORSEO_PASSWORD : null;
         $keywordsRaw = "Glücksspiel|Sportwetten|Automatenspiel";
-
-        if (!$login || !$password || !$keywordsRaw) {
-            echo "Fehlende Umgebungsvariablen. Abbruch.\n";
-            return [];
-        }
-
         $keywordList = explode('|', $keywordsRaw);
+
         $client = new Client([
-            'auth' => [$login, $password],
-            'base_uri' => 'https://api.dataforseo.com/',
             'timeout' => 30,
         ]);
 
@@ -38,36 +35,36 @@ class GoogleNews {
             $keyword = trim($keyword);
             echo "Suche nach Keyword: {$keyword}\n";
 
-            $postData = [[
-                "language_code" => "de",
-                "location_code" => 2276,
-                "se_domain" => "google.de",
-                "keyword" => $keyword,
-                "search_mode" => "as_is",
-                "device" => "desktop",
-                "calculate_rectangles" => false
-            ]];
+            // API-Parameter für die SerpApi-Nachrichtensuche
+            $params = [
+                'q' => $keyword,
+                'tbm' => 'nws', // Nur Nachrichten suchen
+                'api_key' => $this->apiKey,
+                'hl' => 'de', // Deutsch als Sprache
+                'tbs' => 'qdr:d', // Artikel der letzten 14 Tage
+            ];
 
             try {
-                $response = $client->post('/v3/serp/google/news/live/advanced', [
-                    'json' => $postData
+                $response = $client->request('GET', 'https://serpapi.com/search', [
+                    'query' => $params
                 ]);
-                $body = json_decode($response->getBody(), true);
+                $body = $response->getBody();
+                $data = json_decode($body, true);
 
-                if ($body['status_code'] !== 20000) {
-                    echo "API-Fehler: {$body['status_message']} ({$body['status_code']})\n";
+                if (isset($data['error'])) {
+                    echo "API-Fehler: {$data['error']}\n";
                     continue;
                 }
 
-                $items = $body['tasks'][0]['result'][0]['items'] ?? [];
+                $items = $data['news_results'] ?? [];
                 $perKeywordCollected = 0;
 
                 foreach ($items as $item) {
                     if ($perKeywordCollected >= $maxPerKeyword) break;
 
                     $title = trim($item['title'] ?? '');
-                    $link = trim($item['url'] ?? '');
-                    $dateRaw = $item['datetime'] ?? null;
+                    $link = trim($item['link'] ?? '');
+                    $dateRaw = $item['date'] ?? null;
 
                     if (!$title || !$link) continue;
                     if ($this->existsPost($title, $link)) {
@@ -75,7 +72,7 @@ class GoogleNews {
                         continue;
                     }
 
-                    $dateTime = $dateRaw ? date('Y-m-d H:i:s', strtotime($dateRaw)) : date('Y-m-d H:i:s');
+                    $dateTime = date('Y-m-d H:i:s', strtotime($dateRaw));
                     $this->insertPost($dateTime, $source['id'], $title, $link);
 
                     $results[] = [
