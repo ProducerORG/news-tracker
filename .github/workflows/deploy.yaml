@@ -72,6 +72,9 @@ jobs:
           server-dir: /backend/vendor/
           # dangerous-clean-slate: true
 
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
       - name: Set permissions for scrapeWrapper.php via FTP (lftp)
         run: |
           lftp -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASS }} ${{ secrets.FTP_HOST }} << EOF
