@@ -62,4 +62,4 @@ try {
 $end = microtime(true);
 $duration = round($end - $start, 2);
 
-echo "\n==== Scraper beendet nach {$duration} Sekunden! ====\n";
+echo "\n==== Scraper beendet nach {$duration} Sekunden ====\n";
