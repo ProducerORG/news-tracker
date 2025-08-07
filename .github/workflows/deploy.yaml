@@ -71,3 +71,11 @@ jobs:
           local-dir: ./backend/vendor/
           server-dir: /backend/vendor/
           # dangerous-clean-slate: true
+
+      - name: Set permissions for scrapeWrapper.php via FTP (lftp)
+        run: |
+          lftp -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASS }} ${{ secrets.FTP_HOST }} << EOF
+          set ftp:ssl-allow no
+          chmod 744 /backend/scrapers/scrapeWrapper.php
+          bye
+          EOF
