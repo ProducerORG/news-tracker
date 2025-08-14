@@ -7,6 +7,10 @@ use GuzzleHttp\Client;
 
 class GoogleNews {
     private $apiKey;
+    private $excludedDomains = [
+        'https://www.meinbezirk.at/',
+        'https://www.tipico.de/wett-tipps/'
+    ];
 
     public function __construct() {
         $this->apiKey = SERPAPI_KEY;  // API-Schlüssel aus der Konstante laden
@@ -29,7 +33,7 @@ class GoogleNews {
         ]);
 
         $results = [];
-        $maxPerKeyword = 5;
+        $maxPerKeyword = 3;
 
         foreach ($keywordList as $keyword) {
             $keyword = trim($keyword);
@@ -59,6 +63,13 @@ class GoogleNews {
                 $items = $data['news_results'] ?? [];
                 $perKeywordCollected = 0;
 
+                // Sortieren nach Relevanz, falls SerpApi das nicht standardmäßig tut
+                usort($items, function($a, $b) {
+                    $scoreA = $a['serpapi_link_score'] ?? 0;
+                    $scoreB = $b['serpapi_link_score'] ?? 0;
+                    return $scoreB <=> $scoreA;
+                });
+
                 foreach ($items as $item) {
                     if ($perKeywordCollected >= $maxPerKeyword) break;
 
@@ -68,15 +79,24 @@ class GoogleNews {
 
                     if (!$title || !$link) continue;
 
-                    // Wenn das Datum fehlt oder ungültig ist (1970-01-01 00:00:00), dann das aktuelle Datum verwenden
+                    // Exklusionsfilter für unerwünschte Domains
+                    $skip = false;
+                    foreach ($this->excludedDomains as $domain) {
+                        if (strpos($link, $domain) === 0) {
+                            $skip = true;
+                            echo "Übersprungen (exkludierte Domain): $title ($link)\n";
+                            break;
+                        }
+                    }
+                    if ($skip) continue;
+
+                    // Datum parsen
                     if (empty($dateRaw) || $dateRaw === '1970-01-01 00:00:00') {
-                        $dateTime = date('Y-m-d H:i:s');  // Aktuelles Datum und Uhrzeit verwenden
+                        $dateTime = date('Y-m-d H:i:s');
                     } else {
-                        // Versuche, die Zeitangabe zu parsen (vor X Stunden, Tagen, etc.)
                         try {
                             $dateTime = $this->parseDate($dateRaw);
                         } catch (\Exception $e) {
-                            // Falls das Parsen fehlschlägt, das aktuelle Datum verwenden
                             $dateTime = date('Y-m-d H:i:s');
                         }
                     }
