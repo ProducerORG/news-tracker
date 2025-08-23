@@ -25,8 +25,10 @@ class GoogleNews {
             return [];
         }
 
-        $keywordsRaw = "Glücksspiel|Sportwetten"; //|Automatenspiel
+        $keywordsRaw = "Glücksspiel|Sportwetten|Automatenspiel";
         $keywordList = explode('|', $keywordsRaw);
+        shuffle($keywordList);
+        $keywordList = array_slice($keywordList, 0, 2);
 
         $client = new Client([
             'timeout' => 30,
