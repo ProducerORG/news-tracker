@@ -37,7 +37,7 @@ if ($action === 'rewrite-article') {
 }
 
 if ($requestMethod === 'GET' && $action === 'posts') {
-    echo supabaseRequest('GET', 'posts?select=*,source:sources(*)&deleted=eq.false&limit=2000');
+    echo supabaseRequest('GET', 'posts?select=*,source:sources(*)&deleted=eq.false&limit=6000');
     exit;
 }
 
