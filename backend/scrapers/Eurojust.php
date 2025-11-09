@@ -48,6 +48,11 @@ class Eurojust {
                     $href = $titleNode->getAttribute('href');
                     $link = (strpos($href, 'http') === 0) ? $href : 'https://www.eurojust.europa.eu' . $href;
 
+                    if ($this->isBlacklistedTitle($title)) {
+                        echo "Übersprungen (Blacklist): $title\n";
+                        continue;
+                    }
+
                     $dateRaw = trim($dateNode->textContent);
                     $dateTime = DateTime::createFromFormat('d F Y', $dateRaw);
                     if (!$dateTime) {
@@ -87,6 +92,29 @@ class Eurojust {
         }
 
         return $results;
+    }
+
+    private function isBlacklistedTitle($title) {
+        $blacklist = [
+            'tipp',
+            'prognose',
+            'quoten',
+            'gorans sportwetten',
+            'das sind die gewinnzahlen vom',
+            'tipp it like',
+            'tipp & quoten',
+            'wett-tipp mit prognose & quoten',
+            'lottozahlen 6aus49'
+        ];
+
+        $titleLower = mb_strtolower($title);
+        foreach ($blacklist as $term) {
+            if (mb_strpos($titleLower, $term) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function fetchSourceByName($name) {
