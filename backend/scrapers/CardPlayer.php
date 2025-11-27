@@ -21,7 +21,14 @@ class CardPlayer {
         while ($page <= $maxPages) {
             $url = $baseUrl; // falls in Zukunft /page/$page, hier anpassen
             echo "Lade Seite: $url\n";
-            $html = @file_get_contents($url);
+            $options = [
+                'http' => [
+                    'method' => 'GET',
+                    'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+                ]
+            ];
+            $context = stream_context_create($options);
+            $html = @file_get_contents($url, false, $context);
             if (!$html) {
                 echo "Seite $url nicht erreichbar. Beende.\n";
                 break;
