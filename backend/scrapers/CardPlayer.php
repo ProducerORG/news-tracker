@@ -16,19 +16,13 @@ class CardPlayer {
 
         $results = [];
         $page = 1;
-        $maxPages = 5; // keine klassische Pagination sichtbar, daher fest
+        $maxPages = 5;
 
         while ($page <= $maxPages) {
-            $url = $baseUrl; // falls in Zukunft /page/$page, hier anpassen
+            $url = $baseUrl; // keine Pagination vorhanden
             echo "Lade Seite: $url\n";
-            $options = [
-                'http' => [
-                    'method' => 'GET',
-                    'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
-                ]
-            ];
-            $context = stream_context_create($options);
-            $html = @file_get_contents($url, false, $context);
+            $html = $this->getPage($url);
+
             if (!$html) {
                 echo "Seite $url nicht erreichbar. Beende.\n";
                 break;
@@ -79,6 +73,7 @@ class CardPlayer {
                     ];
                 }
             }
+
             $page++;
         }
 
@@ -86,7 +81,7 @@ class CardPlayer {
     }
 
     private function fetchArticleDate($link) {
-        $html = @file_get_contents($link);
+        $html = $this->getPage($link);
         if (!$html) {
             echo "Artikel nicht erreichbar: $link\n";
             return null;
@@ -96,7 +91,6 @@ class CardPlayer {
         @$dom->loadHTML($html);
         $xpath = new DOMXPath($dom);
 
-        // Versuche sichtbares Datum zu finden
         $dateNode = $xpath->query('//time')->item(0);
         if ($dateNode) {
             $dateText = trim($dateNode->textContent);
@@ -108,7 +102,6 @@ class CardPlayer {
             }
         }
 
-        // Fallback: meta[name=article:published_time]
         $metaDate = $xpath->query('//meta[@property="article:published_time"]')->item(0);
         if ($metaDate) {
             $dateRaw = $metaDate->getAttribute('content');
@@ -118,6 +111,32 @@ class CardPlayer {
         }
 
         return null;
+    }
+
+    private function getPage($url) {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // optional bei lokalen Tests
+        $html = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            echo "cURL-Fehler: " . curl_error($ch) . "\n";
+            curl_close($ch);
+            return null;
+        }
+
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($status !== 200) {
+            echo "HTTP-Status $status für $url\n";
+            return null;
+        }
+
+        return $html;
     }
 
     private function fetchSourceByName($name) {
