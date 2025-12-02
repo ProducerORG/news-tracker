@@ -92,7 +92,11 @@ class GoogleNews {
                     }
                     if ($skip) continue;
 
-                    // Datum parsen
+                    if ($this->isBlacklistedTitle($title)) {
+                        echo "Übersprungen (Blacklist): $title\n";
+                        continue;
+                    }
+
                     if (empty($dateRaw) || $dateRaw === '1970-01-01 00:00:00') {
                         $dateTime = date('Y-m-d H:i:s');
                     } else {
@@ -128,6 +132,26 @@ class GoogleNews {
         }
 
         return $results;
+    }
+
+    private function isBlacklistedTitle($title) {
+        $blacklist = [
+            'gorans sportwetten',
+            'das sind die gewinnzahlen vom',
+            'tipp it like',
+            'tipp & quoten',
+            'wett-tipp mit prognose & quoten',
+            'lottozahlen 6aus49'
+        ];
+
+        $titleLower = mb_strtolower($title);
+        foreach ($blacklist as $term) {
+            if (mb_strpos($titleLower, $term) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function fetchSourceByName($name) {
