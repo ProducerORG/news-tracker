@@ -9,7 +9,9 @@ class GoogleNews {
     private $apiKey;
     private $excludedDomains = [
         'https://www.meinbezirk.at/',
-        'https://www.tipico.de/wett-tipps/'
+        'https://www.tipico.de/wett-tipps/',
+        'https://www.mopo.de/',
+        'https://mopo.de/'
     ];
 
     public function __construct() {
@@ -141,7 +143,8 @@ class GoogleNews {
             'tipp it like',
             'tipp & quoten',
             'wett-tipp mit prognose & quoten',
-            'lottozahlen 6aus49'
+            'lottozahlen 6aus49',
+            'tipp, prognose & quoten am'
         ];
 
         $titleLower = mb_strtolower($title);
