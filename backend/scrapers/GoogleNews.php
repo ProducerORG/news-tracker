@@ -11,7 +11,8 @@ class GoogleNews {
         'https://www.meinbezirk.at/',
         'https://www.tipico.de/wett-tipps/',
         'https://www.mopo.de/',
-        'https://mopo.de/'
+        'https://mopo.de/',
+        "https://ekz-crosstour.ch"
     ];
 
     public function __construct() {
